@@ -1,0 +1,2749 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rii Market — Payment Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    (() => {
+      let t = null;
+      try { t = localStorage.getItem('rii_theme'); } catch (e) {}
+      if (!t) t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      document.documentElement.dataset.theme = t;
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('intro');
+    })();
+  </script>
+  <style>
+    :root {
+      /* Tema Megumi Fushiguro & Cursed Energy Neon */
+      --bg: #070709;
+      --surface: rgba(18, 20, 29, 0.85);
+      --border: rgba(56, 189, 248, 0.2);
+      --text: #fafafa;
+      --muted: #94a3b8;
+      --aura: rgba(14, 116, 144, 0.25);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background-color: var(--bg);
+      background-image: radial-gradient(circle at 50% 20%, rgba(14, 116, 144, 0.15) 0%, transparent 70%);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px 16px;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Cahaya Latar Belakang Dinamis */
+    .ambient-light {
+      position: fixed;
+      top: -10%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, var(--aura) 0%, transparent 68%);
+      filter: blur(55px);
+      pointer-events: none;
+      z-index: 0;
+      transition: background 0.6s ease;
+      animation: pulseAura 6s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulseAura {
+      0% { transform: translateX(-50%) scale(0.95); opacity: 0.75; }
+      100% { transform: translateX(-50%) scale(1.1); opacity: 1; }
+    }
+
+    .wrapper {
+      width: 100%;
+      max-width: 410px;
+      position: relative;
+      z-index: 1;
+      animation: wrapperEnter 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes wrapperEnter {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .header .subtitle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 600;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      padding: 5px 12px;
+      border-radius: 99px;
+    }
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      background: #38bdf8;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #38bdf8;
+      animation: blink 2s infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+    .header h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+    }
+
+    /* Pilihan Metode Pembayaran */
+    .selector {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-bottom: 18px;
+    }
+
+    .pill {
+      background: var(--surface);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 10px 6px;
+      border-radius: 99px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      text-align: center;
+      transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+      font-family: inherit;
+    }
+    .pill:hover {
+      color: var(--text);
+      border-color: rgba(56, 189, 248, 0.4);
+      transform: translateY(-1px);
+    }
+    .pill.active {
+      background: #38bdf8;
+      color: #070709;
+      border-color: #38bdf8;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+      font-weight: 700;
+    }
+
+    /* 3D Card Container */
+    .card-scene {
+      width: 100%;
+      height: 265px;
+      perspective: 1400px;
+      position: relative;
+      margin-bottom: 18px;
+    }
+
+    .card-scene.switching {
+      animation: cardSwitchPulse 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    @keyframes cardSwitchPulse {
+      0% { transform: scale(1); }
+      45% { transform: scale(0.955) translateY(3px); }
+      100% { transform: scale(1); }
+    }
+
+    .card-tilt-wrapper {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.15s ease-out;
+    }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 24px;
+      padding: 22px 24px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      box-shadow: 0 28px 50px -12px rgba(0, 0, 0, 0.85);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease, background 0.45s ease;
+      
+      /* Watermark Siluet Karakter Megumi & Anjing Bayangan (Divine Dogs) */
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Cpath fill='%2338bdf8' opacity='0.12' d='M180,140 L195,110 L210,130 L220,105 L200,90 L185,95 L170,75 L155,90 L140,85 L130,105 L145,125 L135,150 L160,170 L180,140 Z'/%3E%3Cpath fill='%2338bdf8' opacity='0.15' d='M100,100 L115,65 L130,80 L145,50 L155,75 L170,45 L175,80 L190,70 L175,110 L160,100 L145,130 L125,115 L110,135 Z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right -10px bottom -10px;
+      background-size: 170px 170px;
+    }
+
+    .card-glare {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(56, 189, 248, 0.15), transparent 55%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* State Putaran 3D */
+    .card-front {
+      transform: rotateY(0deg);
+      opacity: 1;
+      z-index: 2;
+    }
+    .card-back {
+      background: linear-gradient(135deg, #15171e 0%, #090a0f 100%);
+      transform: rotateY(180deg);
+      opacity: 0;
+      z-index: 1;
+      pointer-events: none;
+      justify-content: center;
+      padding: 16px 18px;
+    }
+
+    .card-scene.is-flipped .card-front {
+      transform: rotateY(-180deg);
+      opacity: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .card-scene.is-flipped .card-back {
+      transform: rotateY(0deg);
+      opacity: 1;
+      z-index: 2;
+      pointer-events: auto;
+    }
+
+    /* Tema Warna Kartu Nuansa Megumi */
+    .theme-krom { background-color: #13182b; background-image: linear-gradient(135deg, #18132b 0%, #07050d 100%), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Cpath fill='%2338bdf8' opacity='0.12' d='M180,140 L195,110 L210,130 L220,105 L200,90 L185,95 L170,75 L155,90 L140,85 L130,105 L145,125 L135,150 L160,170 L180,140 Z'/%3E%3Cpath fill='%2338bdf8' opacity='0.15' d='M100,100 L115,65 L130,80 L145,50 L155,75 L170,45 L175,80 L190,70 L175,110 L160,100 L145,130 L125,115 L110,135 Z'/%3E%3C/svg%3E"); background-size: cover, 170px 170px; background-repeat: no-repeat, no-repeat; border: 1px solid rgba(56, 189, 248, 0.3); }
+    .theme-seabank { background-color: #1a162b; background-image: linear-gradient(135deg, #20132b 0%, #08040d 100%), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Cpath fill='%23a855f7' opacity='0.12' d='M180,140 L195,110 L210,130 L220,105 L200,90 L185,95 L170,75 L155,90 L140,85 L130,105 L145,125 L135,150 L160,170 L180,140 Z'/%3E%3Cpath fill='%23a855f7' opacity='0.15' d='M100,100 L115,65 L130,80 L145,50 L155,75 L170,45 L175,80 L190,70 L175,110 L160,100 L145,130 L125,115 L110,135 Z'/%3E%3C/svg%3E"); background-size: cover, 170px 170px; background-repeat: no-repeat, no-repeat; border: 1px solid rgba(168, 85, 247, 0.3); }
+    .theme-gopay { background-color: #0f212e; background-image: linear-gradient(135deg, #0f212e 0%, #04080d 100%), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Cpath fill='%2306b6d4' opacity='0.12' d='M180,140 L195,110 L210,130 L220,105 L200,90 L185,95 L170,75 L155,90 L140,85 L130,105 L145,125 L135,150 L160,170 L180,140 Z'/%3E%3Cpath fill='%2306b6d4' opacity='0.15' d='M100,100 L115,65 L130,80 L145,50 L155,75 L170,45 L175,80 L190,70 L175,110 L160,100 L145,130 L125,115 L110,135 Z'/%3E%3C/svg%3E"); background-size: cover, 170px 170px; background-repeat: no-repeat, no-repeat; border: 1px solid rgba(6, 182, 212, 0.3); }
+    .theme-superbank { background-color: #0e241c; background-image: linear-gradient(135deg, #0e241c 0%, #040807 100%), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Cpath fill='%2310b981' opacity='0.12' d='M180,140 L195,110 L210,130 L220,105 L200,90 L185,95 L170,75 L155,90 L140,85 L130,105 L145,125 L135,150 L160,170 L180,140 Z'/%3E%3Cpath fill='%2310b981' opacity='0.15' d='M100,100 L115,65 L130,80 L145,50 L155,75 L170,45 L175,80 L190,70 L175,110 L160,100 L145,130 L125,115 L110,135 Z'/%3E%3C/svg%3E"); background-size: cover, 170px 170px; background-repeat: no-repeat, no-repeat; border: 1px solid rgba(16, 185, 129, 0.3); }
+
+    .card-top, .chip-row, .acc-section { position: relative; z-index: 1; }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .bank-type {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1.6px;
+      color: rgba(255,255,255,0.55);
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    .bank-name {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+    }
+
+    /* Chip Kartu */
+    .chip-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 2px 0;
+    }
+    .chip {
+      width: 44px;
+      height: 32px;
+      border-radius: 7px;
+      background: linear-gradient(135deg, #e5c158 0%, #fbf0b9 50%, #b38728 100%);
+      position: relative;
+      box-shadow: inset 0 1px 2px rgba(255,255,255,0.6), 0 2px 6px rgba(0,0,0,0.4);
+    }
+    .chip::after {
+      content: "";
+      position: absolute;
+      inset: 6px;
+      border: 1px solid rgba(0,0,0,0.28);
+      border-radius: 3px;
+    }
+
+    /* Nomor Rekening */
+    .acc-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: 1.8px;
+      color: #ffffff;
+      margin-bottom: 14px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      transition: transform 0.2s ease;
+    }
+    .acc-number:hover { transform: translateX(3px); }
+    .acc-number span.copy-hint {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 0.66rem;
+      background: rgba(56, 189, 248, 0.2);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 3px 9px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      color: #38bdf8;
+    }
+
+    .card-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .label {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 1.4px;
+      color: rgba(255,255,255,0.48);
+      margin-bottom: 3px;
+    }
+    .holder-name {
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* SISI BELAKANG: QRIS RII MARKET */
+    .qris-box {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      width: 100%;
+      height: 100%;
+      position: relative;
+      z-index: 1;
+    }
+    .qris-img-wrapper {
+      background: #ffffff;
+      padding: 10px;
+      border-radius: 16px;
+      height: 190px;
+      width: 165px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      cursor: zoom-in;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+    }
+    .qris-img-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .qris-info {
+      text-align: left;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .qris-badge {
+      display: inline-block;
+      align-self: flex-start;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 1.1px;
+      background: rgba(0, 174, 214, 0.18);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 3px 8px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+    }
+    .qris-info h3 {
+      font-size: 0.94rem;
+      font-weight: 700;
+      margin-bottom: 2px;
+      line-height: 1.2;
+    }
+    .qris-nmid {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    /* Badge Note Maksimal Transfer 499K */
+    .limit-note {
+      background: rgba(245, 158, 11, 0.14);
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      color: #fcd34d;
+      padding: 6px 9px;
+      border-radius: 8px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      margin-bottom: 9px;
+      line-height: 1.3;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      animation: limitPulse 2.5s ease-in-out infinite;
+    }
+    @keyframes limitPulse {
+      0%, 100% { box-shadow: 0 0 0 rgba(245, 158, 11, 0); }
+      50% { box-shadow: 0 0 12px rgba(245, 158, 11, 0.25); }
+    }
+
+    .zoom-hint {
+      display: inline-flex;
+      align-self: flex-start;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.7rem;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      padding: 5px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    /* Tombol Aksi Utama */
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+    .btn {
+      background: var(--surface);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 13px 16px;
+      border-radius: 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      font-family: inherit;
+      text-decoration: none;
+    }
+    .btn:hover {
+      background: rgba(56, 189, 248, 0.05);
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+    .btn:active { transform: scale(0.97); }
+
+    .btn-primary {
+      background: #38bdf8;
+      color: #070709;
+      border-color: #38bdf8;
+      font-weight: 700;
+    }
+    .btn-primary:hover {
+      background: #7dd3fc;
+      color: #070709;
+    }
+
+    /* Konfirmasi Pembayaran */
+    .confirm-section {
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .confirm-label {
+      text-align: center;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1.6px;
+      color: var(--muted);
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+    .confirm-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .btn-wa svg { color: #22c55e; }
+    .btn-tele svg { color: #38bdf8; }
+
+    /* Modal Fullscreen QRIS */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(10px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-card {
+      background: #13182b;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #ffffff;
+      padding: 20px;
+      border-radius: 22px;
+      max-width: 340px;
+      width: 100%;
+      text-align: center;
+    }
+    .modal-card img {
+      width: 100%;
+      max-height: 300px;
+      object-fit: contain;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      padding: 6px;
+      background: #fff;
+    }
+    .modal-card h4 { font-size: 1.05rem; margin-bottom: 2px; }
+    .modal-card p.nmid { font-size: 0.74rem; color: #94a3b8; margin-bottom: 10px; font-family: 'JetBrains Mono', monospace; }
+    .modal-limit-badge {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid #f59e0b;
+      color: #fcd34d;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+    .modal-close {
+      width: 100%;
+      padding: 11px;
+      border: none;
+      background: #38bdf8;
+      color: #070709;
+      font-weight: 700;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    /* Toast Notifikasi */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #38bdf8;
+      color: #070709;
+      padding: 10px 20px;
+      border-radius: 99px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      z-index: 120;
+      text-align: center;
+      max-width: 90%;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Hujan Neon (paling belakang) & Percikan Klik */
+    #neon-rain {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.55;
+    }
+    #click-splash {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 300;
+    }
+
+    /* Karakter Robot Chibi (original) */
+    #chibi {
+      position: fixed;
+      left: 0;
+      bottom: 6px;
+      width: 58px;
+      height: 78px;
+      z-index: 50;
+      pointer-events: none;
+      will-change: transform;
+    }
+    #chibi .chibi-rot { width: 100%; height: 100%; transform-origin: 50% 100%; }
+    #chibi .chibi-squash, #chibi .chibi-flip { width: 100%; height: 100%; transform-origin: 50% 100%; }
+    #chibi.left .chibi-flip { transform: scaleX(-1); }
+    #chibi svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 6px rgba(34,211,238,0.45)); }
+    #chibi .bob, #chibi .lean { transform-box: view-box; transform-origin: 30px 78px; }
+    #chibi .head { transform-box: view-box; transform-origin: 30px 44px; }
+
+    /* Ekspresi wajah */
+    #chibi .fx { display: none; }
+    #chibi[data-face="cool"] .e-cool, #chibi[data-face="cool"] .m-smirk,
+    #chibi[data-face="happy"] .e-happy, #chibi[data-face="happy"] .m-open, #chibi[data-face="happy"] .blush,
+    #chibi[data-face="shock"] .e-x, #chibi[data-face="shock"] .m-open, #chibi[data-face="shock"] .sweat,
+    #chibi[data-face="dizzy"] .e-dizzy, #chibi[data-face="dizzy"] .m-wavy,
+    #chibi[data-face="effort"] .e-effort, #chibi[data-face="effort"] .m-wavy, #chibi[data-face="effort"] .sweat { display: inline; }
+    #chibi.talking[data-face="cool"] .m-smirk { animation: talkA 0.28s steps(1) infinite; }
+    #chibi.talking[data-face="cool"] .m-open { display: inline; animation: talkB 0.28s steps(1) infinite; }
+    #chibi .e-cool { animation: chibiBlink 4.2s infinite; transform-box: fill-box; transform-origin: 50% 50%; }
+    #chibi .antenna { transform-box: view-box; transform-origin: 30px 9px; }
+    #chibi .ant-tip { animation: antGlow 1.6s ease-in-out infinite; }
+    #chibi .core { animation: antGlow 2.2s ease-in-out infinite; }
+    #chibi .screen { filter: drop-shadow(0 0 1.5px #22d3ee); }
+    #chibi .jet { display: none; transform-box: fill-box; transform-origin: 50% 0; }
+    #chibi.jump .jet { display: inline; animation: jetFlicker 0.08s linear infinite alternate; }
+    @keyframes antGlow { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+    @keyframes jetFlicker { from { transform: scaleY(0.75); } to { transform: scaleY(1.15); } }
+
+    /* Jalan */
+    /* Lari */
+    /* Manjat */
+    /* Jatuh (panik) */
+    /* Tengkurap */
+    /* Lompat */
+    /* Melambai */
+    /* Joget */
+    #chibi.dance .bob { animation: danceBob 0.5s ease-in-out infinite; }
+    /* Pusing */
+    #chibi.dizzy .head { animation: dizzyHead 0.7s ease-in-out infinite; }
+    #chibi.dizzy .bob { animation: dizzyBody 0.7s ease-in-out infinite; }
+
+    #chibi .stars { display: none; position: absolute; left: 50%; top: -6px; width: 44px; height: 14px; margin-left: -22px; }
+    #chibi.dizzy .stars { display: block; }
+    #chibi .stars span { position: absolute; left: 50%; top: 0; font-size: 11px; animation: starOrbit 0.9s linear infinite; }
+    #chibi .stars span:nth-child(2) { animation-delay: -0.3s; }
+    #chibi .stars span:nth-child(3) { animation-delay: -0.6s; }
+
+    #chibi .bubble {
+      position: absolute; left: 50%; bottom: 100%; margin-bottom: 4px; transform: translateX(-50%) scale(0);
+      background: rgba(15,23,42,0.94); border: 1px solid rgba(34,211,238,0.55); color: #e0f2fe;
+      font-size: 0.66rem; font-weight: 700; white-space: normal; width: max-content; max-width: 160px; text-align: center; line-height: 1.3; padding: 4px 8px; border-radius: 10px;
+      transition: transform 0.2s cubic-bezier(.3,1.6,.5,1); transform-origin: 50% 100%;
+    }
+    #chibi .bubble.show { transform: translateX(-50%) scale(1); }
+    #chibi.b-left .bubble { left: 0; transform: scale(0); transform-origin: 0 100%; }
+    #chibi.b-left .bubble.show { transform: scale(1); }
+    #chibi.b-right .bubble { left: auto; right: 0; transform: scale(0); transform-origin: 100% 100%; }
+    #chibi.b-right .bubble.show { transform: scale(1); }
+
+    .chibi-puff {
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 49;
+      background: radial-gradient(circle, rgba(241,245,249,0.85) 0%, rgba(148,163,184,0.5) 55%, transparent 72%);
+      animation: puffGo var(--life) ease-out forwards;
+    }
+
+    @keyframes chibiBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+    @keyframes chibiSwing { 0%,100% { transform: rotate(22deg); } 50% { transform: rotate(-22deg); } }
+    @keyframes chibiRun { 0%,100% { transform: rotate(48deg); } 50% { transform: rotate(-48deg); } }
+    @keyframes chibiWave { from { transform: rotate(-155deg); } to { transform: rotate(-115deg); } }
+    @keyframes climbL { 0%,100% { transform: rotate(175deg); } 50% { transform: rotate(130deg); } }
+    @keyframes climbR { 0%,100% { transform: rotate(-130deg); } 50% { transform: rotate(-175deg); } }
+    @keyframes climbLeg { 0%,100% { transform: rotate(-35deg); } 50% { transform: rotate(5deg); } }
+    @keyframes flailL { from { transform: rotate(120deg); } to { transform: rotate(175deg); } }
+    @keyframes flailR { from { transform: rotate(-120deg); } to { transform: rotate(-175deg); } }
+    @keyframes danceBob { 0%,100% { transform: translateY(0) rotate(-8deg); } 50% { transform: translateY(-5px) rotate(8deg); } }
+    @keyframes dizzyHead { 0%,100% { transform: rotate(-10deg); } 50% { transform: rotate(10deg); } }
+    @keyframes dizzyBody { 0%,100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+    @keyframes starOrbit {
+      0% { transform: translate(-50%,0) translateX(-18px) scale(0.8); opacity: 1; }
+      25% { transform: translate(-50%,0) translateY(-4px) scale(0.6); opacity: 0.6; }
+      50% { transform: translate(-50%,0) translateX(18px) scale(0.8); opacity: 1; }
+      75% { transform: translate(-50%,0) translateY(4px) scale(1.1); opacity: 1; }
+      100% { transform: translate(-50%,0) translateX(-18px) scale(0.8); opacity: 1; }
+    }
+    @keyframes chibiBlink { 0%,92%,100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+    @keyframes talkA { 0% { opacity: 1; } 50% { opacity: 0; } }
+    @keyframes talkB { 0% { opacity: 0; } 50% { opacity: 1; } }
+    @keyframes puffGo {
+      from { transform: translate(0,0) scale(0.4); opacity: 0.9; }
+      to { transform: translate(var(--dx), var(--dy)) scale(1.5); opacity: 0; }
+    }
+    /* Naga (muncul dari kiri) */
+    #dragon {
+      position: fixed; left: 0; bottom: 0; width: 120px; height: 110px; z-index: 52;
+      pointer-events: none; transform: translateX(-130px);
+      transition: transform 0.55s cubic-bezier(.3,1.4,.5,1);
+    }
+    #dragon svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 8px rgba(168,85,247,0.6)); transform-origin: 0 100%; }
+    #dragon.show { transform: translateX(-18px); }
+    #dragon.show svg { animation: dragonBob 1.2s ease-in-out infinite; }
+    #dragon.breath svg { animation: dragonShake 0.09s linear infinite; }
+    #dragon .jaw { transform-box: view-box; transform-origin: 30px 55px; transition: transform 0.18s ease; }
+    #dragon.breath .jaw { transform: rotate(17deg); }
+    #dragon .eye-glow { animation: antGlow 0.8s ease-in-out infinite; }
+    #dragon .roar {
+      position: absolute; left: 70px; top: -20px; transform: scale(0); transform-origin: 0 100%;
+      background: rgba(76,29,149,0.95); color: #fef3c7; border: 1px solid #a855f7;
+      font-size: 0.7rem; font-weight: 800; padding: 4px 8px; border-radius: 10px; white-space: nowrap;
+      transition: transform 0.2s cubic-bezier(.3,1.6,.5,1);
+    }
+    #dragon .roar.show { transform: scale(1); }
+    .dragon-fire {
+      position: fixed; border-radius: 50%; pointer-events: none; z-index: 53; mix-blend-mode: screen;
+      background: radial-gradient(circle, #fffbe0 0%, #fde047 24%, #fb923c 48%, rgba(239,68,68,0.75) 64%, transparent 72%);
+      animation: fireGo var(--life) linear forwards;
+    }
+    .dragon-fire.spark { background: radial-gradient(circle, #ecfeff 0%, #22d3ee 40%, rgba(168,85,247,0.6) 62%, transparent 72%); z-index: 51; }
+    @keyframes fireGo {
+      0% { transform: translate(0,0) scale(0.35); opacity: 1; }
+      75% { opacity: 0.95; }
+      100% { transform: translate(var(--dx), var(--dy)) scale(var(--s)); opacity: 0; }
+    }
+    @keyframes dragonBob { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(-2.5deg) translateY(-2px); } }
+    @keyframes dragonShake { 0% { transform: translate(0,0); } 50% { transform: translate(-1.5px,1px); } 100% { transform: translate(1px,-1px); } }
+
+    /* Robot gosong, jadi abu, hidup lagi */
+    #chibi.charred svg { filter: brightness(0.28) saturate(0) contrast(1.3) drop-shadow(0 0 7px #f97316); animation: burnShake 0.07s linear infinite; }
+    #chibi .ash { display: none; position: absolute; left: 50%; bottom: 0; width: 52px; height: 19px; margin-left: -26px; transform-origin: 50% 100%; }
+    #chibi .ash svg { width: 100%; height: 100%; filter: none; overflow: visible; }
+    #chibi.ashed .ash { display: block; animation: ashDrop 0.35s ease-out; }
+    #chibi.ashed .chibi-rot, #chibi.ashed .stars { visibility: hidden; }
+    #chibi.reviving .ash { display: block; animation: ashShrink 0.6s ease-in forwards; }
+    #chibi.reviving svg { animation: reviveIn 0.8s cubic-bezier(.3,1.5,.5,1); transform-origin: 50% 100%; }
+    #chibi .ember { animation: antGlow 0.6s ease-in-out infinite; }
+    #chibi .ember:nth-of-type(2n) { animation-delay: -0.3s; }
+    @keyframes burnShake { 0% { transform: translate(0,0); } 50% { transform: translate(-1px,0.5px); } 100% { transform: translate(1px,-0.5px); } }
+    @keyframes ashDrop { from { transform: scale(1.3, 0.4); } to { transform: scale(1); } }
+    @keyframes ashShrink { 0% { transform: scale(1); } 40% { transform: scale(1.15, 0.8); } 100% { transform: scale(0); opacity: 0; } }
+    @keyframes reviveIn { 0% { transform: scale(0.05); opacity: 0; } 60% { transform: scale(1.18, 0.86); opacity: 1; } 100% { transform: scale(1); } }
+
+    /* Robot terbang & menunjuk pilihan metode */
+    #chibi.fly .jet { display: inline; animation: jetFlicker 0.06s linear infinite alternate; }
+    #pill-container.robot-hint .pill { animation: pillHint 0.9s ease-in-out 3; }
+    @keyframes pillHint {
+      0%,100% { box-shadow: 0 0 0 0 rgba(34,211,238,0); }
+      50% { box-shadow: 0 0 0 3px rgba(34,211,238,0.55), 0 0 18px rgba(34,211,238,0.6); }
+    }
+
+    /* Tidur */
+    #chibi[data-face="sleep"] .e-sleep, #chibi[data-face="sleep"] .m-snore { display: inline; }
+    /* Mode marah (dicolek 5x): membesar, layar merah */
+    #chibi[data-face="angry"] .e-angry, #chibi[data-face="angry"] .m-angry, #chibi[data-face="angry"] .vein { display: inline; }
+    #chibi[data-face="angry"] .screen { stroke: #f43f5e; fill: #f43f5e; filter: drop-shadow(0 0 2px #f43f5e); }
+    #chibi[data-face="angry"] .ant-tip, #chibi[data-face="angry"] .core { fill: #ef4444; }
+    #chibi.raging svg { filter: drop-shadow(0 0 10px rgba(239,68,68,0.75)); }
+    #chibi.raging .bubble { border-color: rgba(244,63,94,0.8); color: #fecdd3; font-size: 0.78rem; }
+    #chibi .vein { animation: veinPulse 0.35s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 50%; }
+    @keyframes veinPulse { from { transform: scale(0.85); } to { transform: scale(1.15); } }
+    #chibi .m-snore { transform-box: fill-box; transform-origin: 50% 50%; animation: snore 2.4s ease-in-out infinite; }
+    #chibi.sleep .core, #chibi.sleep .ant-tip { opacity: 0.25; animation: none; }
+    .chibi-z {
+      position: fixed; pointer-events: none; z-index: 49; color: #a5f3fc; font-weight: 800;
+      font-family: 'Plus Jakarta Sans', sans-serif; text-shadow: 0 0 6px #22d3ee;
+      animation: zFloat 2s ease-out forwards;
+    }
+    @keyframes snore { 0%,100% { transform: scale(0.6); } 50% { transform: scale(1.3); } }
+    @keyframes zFloat {
+      0% { transform: translate(0,0) scale(0.5) rotate(-10deg); opacity: 0; }
+      20% { opacity: 1; }
+      100% { transform: translate(var(--dx), -42px) scale(1.2) rotate(12deg); opacity: 0; }
+    }
+
+    /* ===== Meteor menghantam, UI hancur, robot memperbaiki ===== */
+    #meteor { position: fixed; left: 0; top: 0; width: 0; height: 0; z-index: 56; pointer-events: none; display: none; will-change: transform; }
+    #meteor.show { display: block; }
+    #meteor .m-tail {
+      position: absolute; right: 0; top: -15px; width: 240px; height: 30px; border-radius: 50%;
+      background: linear-gradient(to left, rgba(255,251,235,0.95) 0%, rgba(253,224,71,0.85) 12%, rgba(251,146,60,0.7) 32%, rgba(239,68,68,0.35) 62%, transparent 100%);
+      filter: blur(2.5px); transform-origin: 100% 50%; animation: mTail 0.09s linear infinite alternate;
+    }
+    #meteor .m-rock {
+      position: absolute; left: -19px; top: -19px; width: 38px; height: 38px; border-radius: 46% 54% 42% 58% / 52% 44% 56% 48%;
+      background: radial-gradient(circle at 34% 32%, #fef3c7 0%, #fb923c 26%, #b45309 52%, #431407 78%);
+      box-shadow: 0 0 22px 8px rgba(251,146,60,0.85), 0 0 70px 26px rgba(239,68,68,0.45);
+      animation: mSpin 0.6s linear infinite;
+    }
+    @keyframes mTail { from { transform: scaleY(0.8) scaleX(0.95); } to { transform: scaleY(1.15) scaleX(1.05); } }
+    @keyframes mSpin { to { rotate: 360deg; } }
+    .m-warn {
+      position: fixed; inset: 0; pointer-events: none; z-index: 44;
+      background: radial-gradient(ellipse at var(--wx) 0%, rgba(239,68,68,0.35) 0%, transparent 55%);
+      animation: mWarn 0.45s ease-in-out infinite alternate;
+    }
+    @keyframes mWarn { from { opacity: 0.25; } to { opacity: 1; } }
+    .m-flash {
+      position: fixed; inset: 0; pointer-events: none; z-index: 58;
+      background: radial-gradient(circle at var(--fx) var(--fy), #fffbeb 0%, rgba(253,186,116,0.85) 25%, rgba(239,68,68,0.35) 55%, transparent 80%);
+      animation: mFlash 0.75s ease-out forwards;
+    }
+    @keyframes mFlash { 0% { opacity: 1; } 100% { opacity: 0; } }
+    .m-ring {
+      position: fixed; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; pointer-events: none; z-index: 57;
+      border: 5px solid rgba(254,215,170,0.9); box-shadow: 0 0 30px rgba(251,146,60,0.8), inset 0 0 20px rgba(251,146,60,0.6);
+      animation: mRing 0.7s cubic-bezier(.2,.7,.3,1) forwards;
+    }
+    @keyframes mRing { from { transform: scale(0.3); opacity: 1; } to { transform: scale(22); opacity: 0; border-width: 1px; } }
+    .m-crack { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 45; overflow: visible; animation: mCrack 5s ease-in forwards; }
+    @keyframes mCrack { 0% { opacity: 0; } 4% { opacity: 1; } 55% { opacity: 0.85; } 100% { opacity: 0; } }
+    .m-broken { filter: grayscale(0.55) brightness(0.7) saturate(0.8); }
+    .m-fixed { animation: mFixed 0.6s ease-out; }
+    @keyframes mFixed {
+      0% { filter: drop-shadow(0 0 0 rgba(34,211,238,0)) brightness(1.6); }
+      35% { filter: drop-shadow(0 0 14px rgba(34,211,238,0.95)) brightness(1.25); }
+      100% { filter: drop-shadow(0 0 0 rgba(34,211,238,0)) brightness(1); }
+    }
+    #chibi .tool { display: none; }
+    #chibi.tooling .tool { display: inline; }
+
+    /* ===== Mode Gelap / Terang ===== */
+    .theme-wipe { position: fixed; border-radius: 50%; pointer-events: none; z-index: 48; will-change: transform, opacity; transform: scale(0.01); }
+    html.theme-swap *, html.theme-swap *::before, html.theme-swap *::after { transition: none !important; }
+    html[data-theme="light"] {
+      /* terang tapi kalem: abu kebiruan, bukan putih menyilaukan */
+      --bg: #d5dbe4;
+      --surface: rgba(232, 236, 243, 0.82);
+      --border: rgba(14, 116, 144, 0.22);
+      --text: #1b2433;
+      --muted: #566176;
+      color-scheme: light;
+    }
+    html[data-theme="light"] body {
+      background-image: radial-gradient(circle at 50% 15%, rgba(56, 189, 248, 0.20) 0%, transparent 65%),
+                        linear-gradient(180deg, #dce2ea 0%, #cfd6e0 100%);
+    }
+    html[data-theme="light"] .ambient-light { opacity: 0.55; }
+    html[data-theme="light"] #neon-rain { opacity: 0.28; }
+    html[data-theme="light"] .header .subtitle { background: rgba(255, 255, 255, 0.35); }
+    html[data-theme="light"] .pill:hover { border-color: rgba(2, 132, 199, 0.45); }
+    html[data-theme="light"] .pill.active { box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3); }
+    html[data-theme="light"] .btn:hover { background: rgba(255, 255, 255, 0.5); border-color: rgba(2, 132, 199, 0.4); }
+    html[data-theme="light"] .btn-primary:hover { background: #7dd3fc; }
+    html[data-theme="light"] .btn-wa svg { color: #15803d; }
+    html[data-theme="light"] .btn-tele svg { color: #0369a1; }
+    html[data-theme="light"] .card-face { box-shadow: 0 22px 40px -14px rgba(30, 41, 59, 0.45); }
+    html[data-theme="light"] .modal-overlay { background: rgba(30, 41, 59, 0.6); }
+    html[data-theme="light"] .toast { box-shadow: 0 10px 26px rgba(30, 41, 59, 0.25); }
+
+    .theme-toggle {
+      position: fixed; top: 14px; right: 14px; z-index: 60;
+      width: 42px; height: 42px; border-radius: 50%;
+      display: grid; place-items: center; cursor: pointer;
+      background: var(--surface); backdrop-filter: blur(10px);
+      border: 1px solid var(--border); color: var(--text);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+      transition: transform 0.25s cubic-bezier(.3,1.6,.5,1);
+    }
+    .theme-toggle:hover { transform: scale(1.08) rotate(-8deg); }
+    .theme-toggle:active { transform: scale(0.92); }
+    .theme-toggle svg { grid-area: 1 / 1; transition: transform 0.55s cubic-bezier(.3,1.4,.5,1), opacity 0.3s ease; }
+    .theme-toggle .i-sun { color: #f59e0b; }
+    .theme-toggle .i-moon { color: #38bdf8; }
+    html[data-theme="light"] .theme-toggle .i-moon,
+    html:not([data-theme="light"]) .theme-toggle .i-sun { transform: rotate(-120deg) scale(0.3); opacity: 0; }
+
+    /* ===== Perisai energi robot (menangkis) ===== */
+    .rb-shield {
+      position: fixed; pointer-events: none; z-index: 54; border-radius: 50%;
+      background:
+        radial-gradient(ellipse at 50% 50%, rgba(34,211,238,0.05) 40%, rgba(34,211,238,0.28) 68%, rgba(165,243,252,0.75) 71%, transparent 74%),
+        repeating-linear-gradient(60deg, rgba(165,243,252,0.10) 0 2px, transparent 2px 12px),
+        repeating-linear-gradient(-60deg, rgba(165,243,252,0.10) 0 2px, transparent 2px 12px);
+      box-shadow: 0 0 22px rgba(34,211,238,0.55), inset 0 0 26px rgba(34,211,238,0.45);
+      animation: shieldIn 0.28s cubic-bezier(.3,1.6,.5,1) both, shieldHum 0.5s ease-in-out 0.28s infinite alternate;
+      will-change: transform, opacity;
+    }
+    .rb-shield.hit { animation: shieldHit 0.18s ease-out; }
+    .rb-shield.break { animation: shieldBreak 0.45s ease-in forwards; }
+    .rb-shield.out { animation: shieldOut 0.35s ease-in forwards; }
+    @keyframes shieldIn { from { transform: scale(0.1); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    @keyframes shieldHum { from { opacity: 0.8; } to { opacity: 1; filter: brightness(1.25); } }
+    @keyframes shieldHit { 0% { transform: scale(1); filter: brightness(2.2); } 50% { transform: scale(0.94, 1.04); } 100% { transform: scale(1); filter: brightness(1); } }
+    @keyframes shieldBreak {
+      0% { transform: scale(1); filter: brightness(2.5) hue-rotate(0deg); opacity: 1; }
+      30% { transform: scale(1.08) rotate(3deg); filter: brightness(1.6) hue-rotate(160deg); }
+      100% { transform: scale(1.35) rotate(-6deg); filter: brightness(0.6) hue-rotate(180deg) blur(4px); opacity: 0; }
+    }
+    @keyframes shieldOut { to { transform: scale(1.25); opacity: 0; filter: blur(3px); } }
+
+    /* ===== Intro: UI kosong, robot memunculkannya ===== */
+    html.intro .wrapper { animation: none; }
+    html.intro .wrapper > * { opacity: 0; visibility: hidden; }
+    .intro-glow {
+      position: fixed; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%;
+      pointer-events: none; z-index: 47;
+      background: radial-gradient(circle, #ecfeff 0%, #22d3ee 45%, transparent 72%);
+      box-shadow: 0 0 18px 6px rgba(34, 211, 238, 0.55);
+    }
+
+    /* ===== Kartu swipe otomatis ===== */
+    .card-front::after {
+      content: ""; position: absolute; inset: -40% -60%; pointer-events: none; z-index: 2;
+      background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.22) 48%, rgba(255,255,255,0.05) 54%, transparent 62%);
+      transform: translateX(-70%); opacity: 0;
+    }
+    .card-front.shine::after { animation: cardShine 0.9s cubic-bezier(.25,.8,.3,1) forwards; }
+    @keyframes cardShine {
+      0% { transform: translateX(-70%); opacity: 1; }
+      100% { transform: translateX(70%); opacity: 1; }
+    }
+    .card-scene { touch-action: pan-y; }
+    .pill { position: relative; overflow: hidden; }
+    .pill .pill-progress {
+      position: absolute; left: 0; bottom: 0; height: 2px; width: 100%;
+      background: rgba(7, 7, 9, 0.45); transform-origin: 0 50%; transform: scaleX(0);
+      pointer-events: none;
+    }
+    .pill.active .pill-progress.run { animation: pillProgress var(--swipe-ms, 5000ms) linear forwards; }
+    .pill.active .pill-progress.paused { animation-play-state: paused; }
+    @keyframes pillProgress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+    /* Robot menunjuk tombol konfirmasi */
+    .btn.robot-hint { animation: btnHint 0.9s ease-in-out 3; }
+    .btn-wa.robot-hint { --hint: 34, 197, 94; }
+    .btn-tele.robot-hint { --hint: 56, 189, 248; }
+    @keyframes btnHint {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(var(--hint), 0); transform: translateY(0); }
+      50% { box-shadow: 0 0 0 3px rgba(var(--hint), 0.55), 0 0 20px rgba(var(--hint), 0.55); transform: translateY(-2px); }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="neon-rain" aria-hidden="true"></canvas>
+<canvas id="click-splash" aria-hidden="true"></canvas>
+<div id="chibi" class="walk" data-face="cool" aria-hidden="true">
+  <div class="bubble" id="chibi-bubble">Yo! 👋</div>
+  <div class="stars"><span>⭐</span><span>✨</span><span>⭐</span></div>
+  <div class="ash">
+    <svg viewBox="0 0 60 22">
+      <line x1="31" y1="9" x2="35" y2="1" stroke="#94a3b8" stroke-width="1.4" stroke-linecap="round"/>
+      <circle cx="35" cy="1" r="2.2" fill="#f472b6" opacity="0.7"/>
+      <path d="M3 22 Q8 10 20 11 Q28 3 38 9 Q52 8 57 22 Z" fill="#475569"/>
+      <path d="M11 22 Q19 15 29 16 Q41 13 49 22 Z" fill="#334155"/>
+      <circle class="ember" cx="18" cy="17" r="1.3" fill="#fb923c"/>
+      <circle class="ember" cx="33" cy="13" r="1.1" fill="#f97316"/>
+      <circle class="ember" cx="43" cy="18" r="1.2" fill="#fbbf24"/>
+      <circle class="ember" cx="26" cy="20" r="0.9" fill="#fb923c"/>
+    </svg>
+  </div>
+  <div class="chibi-rot" id="chibi-rot">
+   <div class="chibi-squash" id="chibi-squash">
+    <div class="chibi-flip">
+      <svg viewBox="0 0 60 80">
+        <g class="bob"><g class="lean">
+          <!-- api jet (saat lompat) -->
+          <g class="jet">
+            <path d="M20.5 77 Q23.5 88 26.5 77 Z M33.5 77 Q36.5 88 39.5 77 Z" fill="#f472b6"/>
+            <path d="M22 77 Q23.5 83 25 77 Z M35 77 Q36.5 83 38 77 Z" fill="#fde68a"/>
+          </g>
+          <!-- tangan belakang (lentur) -->
+          <path id="rb-arm-l" d="M13 44 Q12 50 11 56" stroke="#94a3b8" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <circle id="rb-hand-l" cx="11" cy="56" r="3.4" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1"/>
+          <!-- kaki (lentur) -->
+          <path id="rb-leg-l" d="M23.5 61 Q23.5 67 23.5 74" stroke="#64748b" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+          <g id="rb-foot-l" transform="translate(23.5 74)">
+            <rect x="-5" y="-3.2" width="11" height="6.4" rx="3" fill="#e2e8f0" stroke="#94a3b8" stroke-width="0.8"/>
+            <rect x="-4.5" y="1.4" width="10" height="1.6" rx="0.8" fill="#22d3ee"/>
+          </g>
+          <path id="rb-leg-r" d="M36.5 61 Q36.5 67 36.5 74" stroke="#64748b" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+          <g id="rb-foot-r" transform="translate(36.5 74)">
+            <rect x="-5" y="-3.2" width="11" height="6.4" rx="3" fill="#e2e8f0" stroke="#94a3b8" stroke-width="0.8"/>
+            <rect x="-4.5" y="1.4" width="10" height="1.6" rx="0.8" fill="#22d3ee"/>
+          </g>
+          <g id="rb-body">
+            <!-- badan -->
+            <rect x="15" y="40" width="30" height="22" rx="8" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1"/>
+            <rect x="21" y="44.5" width="18" height="11" rx="3.5" fill="#0b1120"/>
+            <circle class="core" cx="30" cy="50" r="3" fill="#22d3ee"/>
+            <circle cx="24.5" cy="58.5" r="1.2" fill="#f472b6"/>
+            <circle cx="28.5" cy="58.5" r="1.2" fill="#a855f7"/>
+            <circle cx="13" cy="44" r="3.2" fill="#64748b"/>
+            <circle cx="47" cy="44" r="3.2" fill="#64748b"/>
+            <!-- leher -->
+            <rect x="26" y="36" width="8" height="5" rx="1.5" fill="#64748b"/>
+            <!-- kepala -->
+            <g class="head"><g id="rb-head">
+            <g class="antenna" id="chibi-antenna">
+              <line x1="30" y1="9" x2="30" y2="1.5" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round"/>
+              <circle class="ant-tip" cx="30" cy="1.5" r="2.6" fill="#f472b6"/>
+            </g>
+            <rect x="7" y="17" width="4" height="11" rx="2" fill="#22d3ee"/>
+            <rect x="49" y="17" width="4" height="11" rx="2" fill="#22d3ee"/>
+            <rect x="10" y="8" width="40" height="30" rx="10" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1"/>
+            <rect x="14" y="12.5" width="32" height="21" rx="6.5" fill="#0b1120"/>
+            <path d="M16 15 Q18 13.8 22 13.8" stroke="rgba(255,255,255,0.25)" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+            <g class="screen" stroke="#22d3ee" fill="#22d3ee">
+              <!-- mata cool -->
+              <g class="fx e-cool" stroke="none">
+                <rect x="18.5" y="19" width="8" height="5.5" rx="2.7"/>
+                <rect x="33.5" y="19" width="8" height="5.5" rx="2.7"/>
+              </g>
+              <!-- mata senang ^^ -->
+              <path class="fx e-happy" d="M19 24.5 Q22.5 18.5 26 24.5 M34 24.5 Q37.5 18.5 41 24.5" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+              <!-- mata kaget O O -->
+              <g class="fx e-x" fill="none" stroke-width="2">
+                <circle cx="22.5" cy="21.8" r="3.6"/>
+                <circle cx="37.5" cy="21.8" r="3.6"/>
+              </g>
+              <!-- mata pusing -->
+              <path class="fx e-dizzy" d="M22.5 22 m-3.2 0 a3.2 3.2 0 1 0 6.4 0 a2.2 2.2 0 1 0 -4.4 0 a1.1 1.1 0 1 0 2.2 0 M37.5 22 m-3.2 0 a3.2 3.2 0 1 0 6.4 0 a2.2 2.2 0 1 0 -4.4 0 a1.1 1.1 0 1 0 2.2 0" stroke-width="1.2" fill="none"/>
+              <!-- mata ngeden > < -->
+              <path class="fx e-effort" d="M19 19 L25 21.8 L19 24.6 M41 19 L35 21.8 L41 24.6" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- mata marah -->
+              <g class="fx e-angry" stroke="none">
+                <path d="M18 18.2 L26.5 21.4 L26.5 24.6 L18 24.6 Z"/>
+                <path d="M42 18.2 L33.5 21.4 L33.5 24.6 L42 24.6 Z"/>
+              </g>
+              <path class="fx m-angry" d="M25.5 31 Q30 27.4 34.5 31" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+              <!-- mata tidur -->
+              <path class="fx e-sleep" d="M19 22 Q22.5 25 26 22 M34 22 Q37.5 25 41 22" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <ellipse class="fx m-snore" cx="30" cy="29.5" rx="1.7" ry="1.4" stroke="none"/>
+              <!-- pipi -->
+              <g class="fx blush" fill="#f472b6" stroke="none" opacity="0.85">
+                <rect x="15.5" y="26.5" width="4" height="2" rx="1"/>
+                <rect x="40.5" y="26.5" width="4" height="2" rx="1"/>
+              </g>
+              <!-- mulut -->
+              <path class="fx m-smirk" d="M26 29 Q30 31.2 34 29" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+              <rect class="fx m-open" x="27" y="27.6" width="6" height="3.6" rx="1.6" stroke="none"/>
+              <path class="fx m-wavy" d="M25 29.6 q1.25 -1.6 2.5 0 t2.5 0 t2.5 0 t2.5 0" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+            </g>
+            <!-- uap / keringat -->
+            <path class="fx sweat" d="M50 7 q2.4 3.4 0 5.6 q-2.4 -2.2 0 -5.6 Z" fill="#7dd3fc"/>
+            <!-- urat marah 💢 -->
+            <path class="fx vein" d="M47 4 q2 2 0 4 M49 2 q2 2 4 0 M55 4 q-2 2 0 4 M49 10 q2 -2 4 0" stroke="#ef4444" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+          
+            </g></g>
+          </g>
+          <!-- tangan depan (lentur) -->
+          <path id="rb-arm-r" d="M47 44 Q48 50 49 56" stroke="#94a3b8" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <!-- palu (saat memperbaiki) -->
+          <g class="tool" id="rb-tool" transform="translate(49 56)">
+            <rect x="-1.2" y="-14" width="2.4" height="15" rx="1" fill="#b45309"/>
+            <rect x="-6" y="-19" width="12" height="6" rx="1.5" fill="#94a3b8" stroke="#475569" stroke-width="0.8"/>
+            <rect x="-6" y="-19" width="3" height="6" rx="1" fill="#22d3ee" opacity="0.8"/>
+          </g>
+          <circle id="rb-hand-r" cx="49" cy="56" r="3.4" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1"/>
+        </g></g>
+      </svg>
+    </div>
+   </div>
+  </div>
+</div>
+<div id="dragon" aria-hidden="true">
+  <div class="roar" id="dragon-roar">GRAAAH! 🔥</div>
+  <svg viewBox="0 0 120 110">
+    <!-- leher -->
+    <path d="M0 110 L0 46 Q18 36 42 46 L46 110 Z" fill="#4c1d95"/>
+    <path d="M6 60 l6 -8 l4 9 M8 78 l6 -8 l4 9 M10 96 l6 -8 l4 9" fill="#22d3ee"/>
+    <path d="M18 64 Q28 62 38 66 M18 82 Q28 80 38 84 M18 100 Q28 98 38 102" stroke="#7c3aed" stroke-width="2" fill="none"/>
+    <!-- rahang bawah -->
+    <g class="jaw">
+      <path d="M24 53 Q60 57 104 54 Q101 66 72 69 Q42 70 24 61 Z" fill="#5b21b6" stroke="#a855f7" stroke-width="1"/>
+      <path d="M60 56 l3 -5 l3 5 M74 55.5 l3 -5 l3 5 M88 55 l3 -5 l3 5" fill="#f8fafc"/>
+    </g>
+    <!-- dalam mulut -->
+    <path d="M40 54 Q70 55 102 53 Q90 60 60 60 Z" fill="#7f1d1d"/>
+    <!-- kepala atas -->
+    <path d="M18 42 Q28 18 60 19 Q92 21 112 39 Q117 47 108 52 L60 55 Q34 57 18 50 Z" fill="#6d28d9" stroke="#a855f7" stroke-width="1.2"/>
+    <path d="M70 53 l3 5 l3 -5 M84 52.5 l3 5 l3 -5 M98 52 l3 5 l3 -5" fill="#f8fafc"/>
+    <!-- tanduk -->
+    <path d="M32 27 Q24 6 40 -2 Q35 13 44 22 Z" fill="#e9d5ff"/>
+    <path d="M48 22 Q48 4 62 0 Q55 13 59 21 Z" fill="#e9d5ff"/>
+    <!-- sisik -->
+    <path d="M40 34 q4 -3 8 0 M50 30 q4 -3 8 0 M44 42 q4 -3 8 0" stroke="#8b5cf6" stroke-width="1.5" fill="none"/>
+    <!-- mata -->
+    <ellipse class="eye-glow" cx="70" cy="32" rx="7" ry="4.6" fill="#fde047"/>
+    <rect x="69" y="28" width="2.2" height="8" rx="1.1" fill="#1e1b4b"/>
+    <path d="M60 25 L80 29" stroke="#1e1b4b" stroke-width="2.6" stroke-linecap="round"/>
+    <!-- lubang hidung -->
+    <circle cx="104" cy="40" r="1.8" fill="#2e1065"/>
+  </svg>
+</div>
+<div id="meteor" aria-hidden="true"><div class="m-tail"></div><div class="m-rock"></div></div>
+<div class="ambient-light"></div>
+<button class="theme-toggle" id="theme-toggle" type="button" aria-label="Ganti mode terang/gelap" title="Mode terang / gelap">
+  <svg class="i-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+  <svg class="i-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+</button>
+
+<div class="wrapper">
+  <div class="header">
+    <div class="subtitle">
+      <span class="status-dot"></span>
+      Rii Market Official
+    </div>
+    <h1>Pilih Metode Pembayaran</h1>
+  </div>
+
+  <!-- Pilihan Bank / E-Wallet -->
+  <div class="selector" id="pill-container"></div>
+
+  <!-- Area Kartu 3D -->
+  <div class="card-scene" id="card-scene">
+    <div class="card-tilt-wrapper" id="card-tilt">
+      
+      <!-- SISI DEPAN: REKENING / E-WALLET -->
+      <div class="card-face card-front theme-krom" id="card-front">
+        <div class="card-glare" id="card-glare"></div>
+
+        <div class="card-top">
+          <div>
+            <div class="bank-type" id="bank-type">Bank Transfer</div>
+            <div class="bank-name" id="bank-name">Krom Bank</div>
+          </div>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="5" width="20" height="14" rx="3"></rect>
+            <line x1="2" y1="10" x2="22" y2="10"></line>
+          </svg>
+        </div>
+
+        <div class="chip-row">
+          <div class="chip"></div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.8" stroke-linecap="round">
+            <path d="M8.5 8.5a5 5 0 0 1 0 7"></path>
+            <path d="M12 6a8.5 8.5 0 0 1 0 12"></path>
+            <path d="M15.5 3.5a12 12 0 0 1 0 17"></path>
+          </svg>
+        </div>
+
+        <div class="acc-section">
+          <div class="acc-number" id="acc-number-box">
+            <span id="acc-number">7700 1799 1139</span>
+            <span class="copy-hint">Salin</span>
+          </div>
+          <div class="card-bottom">
+            <div>
+              <div class="label">Atas Nama</div>
+              <div class="holder-name" id="holder-name">WINNER FAHRIAL</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SISI BELAKANG: QRIS RII MARKET -->
+      <div class="card-face card-back" id="card-back">
+        <div class="qris-box">
+          <div class="qris-img-wrapper" id="qris-zoom-trigger">
+            <img id="qris-img" src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&amp;margin=10&amp;ecc=M&amp;data=00020101021126610014COM.GO-JEK.WWW01189360091439060342220210G9060342220303UMI51440014ID.CO.QRIS.WWW0215ID10243446724890303UMI5204581653033605802ID5918Rii%20Market%2C%20SK%20KCL6009BENGKALIS61052877162070703A0163047C3A" alt="QRIS Rii Market">
+          </div>
+          <div class="qris-info">
+            <span class="qris-badge">QRIS ALL PAYMENT</span>
+            <h3>RII MARKET, SK KCL</h3>
+            <span class="qris-nmid">NMID: ID1024344672489</span>
+            
+            <!-- Note Maksimal Transfer 499K -->
+            <div class="limit-note">
+              <span>⚠️</span>
+              <span>Maks. Transfer: Rp 499.000 (499K)</span>
+            </div>
+
+            <div class="zoom-hint" id="zoom-btn">🔍 Perbesar QRIS</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Tombol Salin & Flip -->
+  <div class="actions">
+    <button class="btn btn-primary" id="copy-btn" type="button">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      Salin Nomor
+    </button>
+    <button class="btn" id="flip-btn" type="button">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+      <span id="flip-text">Balik ke QRIS</span>
+    </button>
+  </div>
+
+  <!-- Konfirmasi Pembayaran: WhatsApp & Telegram -->
+  <div class="confirm-section">
+    <div class="confirm-label">Sudah Transfer? Konfirmasi Ke:</div>
+    <div class="confirm-grid">
+      <a href="#" target="_blank" rel="noopener" class="btn btn-wa" id="wa-btn">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+        </svg>
+        WhatsApp
+      </a>
+      <a href="#" target="_blank" rel="noopener" class="btn btn-tele" id="tele-btn">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+        Telegram
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Perbesar QRIS -->
+<div class="modal-overlay" id="qris-modal">
+  <div class="modal-card">
+    <img id="modal-qris-img" src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&amp;margin=10&amp;ecc=M&amp;data=00020101021126610014COM.GO-JEK.WWW01189360091439060342220210G9060342220303UMI51440014ID.CO.QRIS.WWW0215ID10243446724890303UMI5204581653033605802ID5918Rii%20Market%2C%20SK%20KCL6009BENGKALIS61052877162070703A0163047C3A" alt="QRIS Full">
+    <h4>RII MARKET, SK KCL</h4>
+    <p class="nmid">NMID: ID1024344672489 (A01)</p>
+    <div class="modal-limit-badge">
+      ⚠️ Maksimal Transfer QRIS: Rp 499.000 (499K)
+    </div>
+    <button class="modal-close" id="modal-close" type="button">Tutup</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">Nomor berhasil disalin</div>
+
+<script>
+  const KODE_QRIS_ASLI = "00020101021126610014COM.GO-JEK.WWW01189360091439060342220210G9060342220303UMI51440014ID.CO.QRIS.WWW0215ID10243446724890303UMI5204581653033605802ID5918Rii Market, SK KCL6009BENGKALIS61052877162070703A0163047C3A"; 
+  const qrisImageUrl = "qris.jpg"; 
+
+  const contactConfig = {
+    whatsapp: "6282284061462",
+    telegram: "heinrc"
+  };
+
+  const accounts = [
+    {
+      bank: "Krom Bank",
+      type: "Bank Transfer",
+      number: "7700 1799 1139",
+      rawNumber: "770017991139",
+      holder: "WINNER FAHRIAL",
+      theme: "theme-krom",
+      aura: "rgba(56, 189, 248, 0.25)"
+    },
+    {
+      bank: "SeaBank",
+      type: "Bank Transfer",
+      number: "9013 1645 8630",
+      rawNumber: "901316458630",
+      holder: "WINNER FAHRIAL",
+      theme: "theme-seabank",
+      aura: "rgba(168, 85, 247, 0.25)"
+    },
+    {
+      bank: "GoPay",
+      type: "E-Wallet",
+      number: "0851 8405 8442",
+      rawNumber: "085184058442",
+      holder: "RII MARKET",
+      theme: "theme-gopay",
+      aura: "rgba(6, 182, 212, 0.25)"
+    },
+    {
+      bank: "Superbank",
+      type: "Bank Transfer",
+      number: "0000 6809 2881",
+      rawNumber: "000068092881",
+      holder: "WINNER FAHRIAL",
+      theme: "theme-superbank",
+      aura: "rgba(16, 185, 129, 0.25)"
+    }
+  ];
+
+  let activeIndex = 0;
+  let isFlipped = false;
+  let scrambleInterval = null;
+
+  const pillContainer = document.getElementById('pill-container');
+  const cardScene = document.getElementById('card-scene');
+  const cardTilt = document.getElementById('card-tilt');
+  const cardFront = document.getElementById('card-front');
+  const cardGlare = document.getElementById('card-glare');
+  const flipBtn = document.getElementById('flip-btn');
+  const flipText = document.getElementById('flip-text');
+  const copyBtn = document.getElementById('copy-btn');
+  const accNumberBox = document.getElementById('acc-number-box');
+  const accNumberEl = document.getElementById('acc-number');
+  const waBtn = document.getElementById('wa-btn');
+  const teleBtn = document.getElementById('tele-btn');
+  const qrisImg = document.getElementById('qris-img');
+  const modalQrisImg = document.getElementById('modal-qris-img');
+  const qrisModal = document.getElementById('qris-modal');
+
+  function initQRIS() {
+    const savedPayload = KODE_QRIS_ASLI.trim() || localStorage.getItem('rii_qris_payload');
+    if (savedPayload) {
+      const realQRUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=10&ecc=M&data=${encodeURIComponent(savedPayload)}`;
+      qrisImg.src = realQRUrl;
+      modalQrisImg.src = realQRUrl;
+    } else {
+      qrisImg.src = qrisImageUrl;
+      modalQrisImg.src = qrisImageUrl;
+    }
+  }
+  initQRIS();
+
+  function animateNumber(targetText) {
+    clearInterval(scrambleInterval);
+    const digits = "0123456789";
+    let step = 0;
+    scrambleInterval = setInterval(() => {
+      accNumberEl.innerText = targetText.split("").map((char, idx) => {
+        if (char === " ") return " ";
+        if (idx < step) return targetText[idx];
+        return digits[Math.floor(Math.random() * 10)];
+      }).join("");
+      step += 1.5;
+      if (step >= targetText.length) {
+        accNumberEl.innerText = targetText;
+        clearInterval(scrambleInterval);
+      }
+    }, 25);
+  }
+
+  function updateConfirmLinks() {
+    const method = isFlipped ? "QRIS Rii Market (Maks. 499K)" : `${accounts[activeIndex].bank} (${accounts[activeIndex].holder})`;
+    const message = encodeURIComponent(`Halo, saya sudah melakukan pembayaran via ${method}. Berikut bukti pembayarannya:`);
+    waBtn.href = `https://wa.me/${contactConfig.whatsapp}?text=${message}`;
+    teleBtn.href = `https://t.me/${contactConfig.telegram}?text=${message}`;
+  }
+
+  function toggleFlip() {
+    isFlipped = !isFlipped;
+    cardScene.classList.toggle('is-flipped', isFlipped);
+    flipText.innerText = isFlipped ? "Lihat Rekening" : "Balik ke QRIS";
+    updateConfirmLinks();
+  }
+
+  function selectMethod(index, fromSwipe) {
+    activeIndex = index;
+    const data = accounts[index];
+
+    document.querySelectorAll('.pill').forEach((pill, i) => {
+      pill.classList.toggle('active', i === index);
+    });
+
+    if (isFlipped) {
+      isFlipped = false;
+      cardScene.classList.remove('is-flipped');
+      flipText.innerText = "Balik ke QRIS";
+    }
+
+    if (!fromSwipe) {
+      cardScene.classList.remove('switching');
+      void cardScene.offsetWidth;
+      cardScene.classList.add('switching');
+    }
+    document.documentElement.style.setProperty('--aura', data.aura);
+
+    cardFront.className = `card-face card-front ${data.theme}`;
+    document.getElementById('bank-type').innerText = data.type;
+    document.getElementById('bank-name').innerText = data.bank;
+    document.getElementById('holder-name').innerText = data.holder;
+    animateNumber(data.number);
+    updateConfirmLinks();
+    restartProgress();
+  }
+
+  /* ===== Swipe otomatis antar rekening ===== */
+  const SWIPE_MS = 5000;
+  const reduceMotionCard = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.documentElement.style.setProperty('--swipe-ms', SWIPE_MS + 'ms');
+  let introWas = false;
+  let swipeLeft = SWIPE_MS, swiping = false, hoverCard = false, lastT = performance.now();
+
+  function autoPaused() {
+    return isFlipped || hoverCard || swiping || document.hidden || document.documentElement.classList.contains('intro') ||
+      qrisModal.classList.contains('open') || !!document.querySelector('.m-broken, .m-fixed');
+  }
+  function restartProgress() {
+    swipeLeft = SWIPE_MS;
+    document.querySelectorAll('.pill-progress').forEach(b => { b.classList.remove('run', 'paused'); });
+    const bar = document.querySelector('.pill.active .pill-progress');
+    if (bar) { void bar.offsetWidth; bar.classList.add('run'); }
+  }
+
+  function swipeTo(index, dir) {
+    if (index === activeIndex || swiping) return;
+    if (reduceMotionCard || !cardScene.animate || document.querySelector('.m-broken, .m-fixed')) { selectMethod(index); return; }
+    if (isFlipped) { selectMethod(index); return; }
+    swiping = true;
+    const off = 62;
+    const out = cardScene.animate([
+      { translate: '0 0', rotate: '0deg', scale: 1, opacity: 1, filter: 'blur(0px)' },
+      { translate: `${-dir * off}% 0`, rotate: `${-dir * 7}deg`, scale: 0.88, opacity: 0, filter: 'blur(5px)' }
+    ], { duration: 330, easing: 'cubic-bezier(.55,0,.8,.25)', fill: 'forwards' });
+    out.onfinish = () => {
+      selectMethod(index, true);
+      const inn = cardScene.animate([
+        { translate: `${dir * off}% 0`, rotate: `${dir * 7}deg`, scale: 0.88, opacity: 0, filter: 'blur(5px)' },
+        { translate: `${-dir * 2.5}% 0`, rotate: `${-dir * 0.8}deg`, scale: 1.01, opacity: 1, filter: 'blur(0px)', offset: 0.7 },
+        { translate: '0 0', rotate: '0deg', scale: 1, opacity: 1, filter: 'blur(0px)' }
+      ], { duration: 620, easing: 'cubic-bezier(.16,1,.3,1)' });
+      out.cancel();
+      cardFront.classList.remove('shine'); void cardFront.offsetWidth; cardFront.classList.add('shine');
+      inn.onfinish = inn.oncancel = () => { swiping = false; };
+    };
+  }
+  const nextIdx = d => (activeIndex + d + accounts.length) % accounts.length;
+
+  function autoLoop(now) {
+    const dt = Math.min(now - lastT, 100); lastT = now;
+    const paused = autoPaused();
+    if (document.documentElement.classList.contains('intro')) { introWas = true; }
+    else if (introWas) { introWas = false; restartProgress(); }
+    const bar = document.querySelector('.pill.active .pill-progress');
+    if (bar) bar.classList.toggle('paused', paused);
+    if (!paused) {
+      swipeLeft -= dt;
+      if (swipeLeft <= 0) { swipeLeft = SWIPE_MS; swipeTo(nextIdx(1), 1); }
+    }
+    requestAnimationFrame(autoLoop);
+  }
+
+  // jeda saat kursor di atas kartu (khusus mouse; di HP tidak ada hover)
+  cardScene.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') hoverCard = true; });
+  cardScene.addEventListener('pointerleave', () => { hoverCard = false; });
+
+  // Geser manual (sentuh / mouse) di kartu
+  let dragX = null, dragY = null;
+  cardScene.addEventListener('pointerdown', e => { dragX = e.clientX; dragY = e.clientY; });
+  window.addEventListener('pointerup', e => {
+    if (dragX == null) return;
+    const dx = e.clientX - dragX, dy = e.clientY - dragY;
+    dragX = null;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.4 && !isFlipped) {
+      const d = dx < 0 ? 1 : -1;
+      swipeTo(nextIdx(d), d);
+    }
+  });
+
+  cardScene.addEventListener('mousemove', (e) => {
+    const rect = cardScene.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const rotateY = ((x / rect.width) - 0.5) * 14;
+    const rotateX = ((0.5 - (y / rect.height)) * 14);
+    cardTilt.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    cardGlare.style.setProperty('--mx', `${(x / rect.width) * 100}%`);
+    cardGlare.style.setProperty('--my', `${(y / rect.height) * 100}%`);
+  });
+
+  cardScene.addEventListener('mouseleave', () => {
+    cardTilt.style.transform = 'rotateX(0deg) rotateY(0deg)';
+  });
+
+  function showToast(msg) {
+    // Robot yang memberi tahu; toast hanya cadangan kalau robot sedang sibuk
+    if (window.rbot && window.rbot.notify(msg)) return;
+    const toast = document.getElementById('toast');
+    toast.innerText = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+
+  function copyTextRaw(text, customMsg) {
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast(customMsg);
+      }).catch(() => fallbackCopyRaw(text, customMsg));
+    } else {
+      fallbackCopyRaw(text, customMsg);
+    }
+  }
+
+  function fallbackCopyRaw(text, customMsg) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast(customMsg);
+  }
+
+  function copyCurrentNumber() {
+    const raw = accounts[activeIndex].rawNumber;
+    const bankName = accounts[activeIndex].bank;
+    copyTextRaw(raw, `Nomor ${bankName} (${raw}) disalin! ✅`);
+  }
+
+  flipBtn.addEventListener('click', toggleFlip);
+  copyBtn.addEventListener('click', copyCurrentNumber);
+  accNumberBox.addEventListener('click', copyCurrentNumber);
+
+  document.getElementById('qris-zoom-trigger').addEventListener('click', () => qrisModal.classList.add('open'));
+  document.getElementById('zoom-btn').addEventListener('click', () => qrisModal.classList.add('open'));
+  document.getElementById('modal-close').addEventListener('click', () => qrisModal.classList.remove('open'));
+  qrisModal.addEventListener('click', (e) => {
+    if (e.target === qrisModal) qrisModal.classList.remove('open');
+  });
+
+  accounts.forEach((acc, index) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `pill ${index === 0 ? 'active' : ''}`;
+    btn.innerText = acc.bank;
+    const bar = document.createElement('span');
+    bar.className = 'pill-progress';
+    btn.appendChild(bar);
+    btn.addEventListener('click', () => {
+      if (index === activeIndex) return restartProgress();
+      swipeTo(index, index > activeIndex ? 1 : -1);
+    });
+    pillContainer.appendChild(btn);
+  });
+
+  updateConfirmLinks();
+  restartProgress();
+  requestAnimationFrame(autoLoop);
+
+  /* ===== Tombol mode gelap / terang ===== */
+  const themeBtn = document.getElementById('theme-toggle');
+  function applyTheme(t) {
+    document.documentElement.dataset.theme = t;
+    try { localStorage.setItem('rii_theme', t); } catch (e) {}
+  }
+  const THEME_LINES = {
+    light: ['Mode terang ON ☀️ Silau? Tenang, udah kuredupin 😎', 'Selamat pagi~ ☀️', 'Terang, tapi tetap adem 🌤️'],
+    dark:  ['Mode gelap ON 🌙 Mata aman~', 'Malam tiba, neon menyala ✨', 'Gelap = keren 😎🌙']
+  };
+  let themeBusy = false;
+  function swapThemeInstant(t) {
+    // matikan transisi sebentar supaya semua elemen ganti warna dalam 1 frame (tidak patah-patah)
+    const root = document.documentElement;
+    root.classList.add('theme-swap');
+    applyTheme(t);
+    void root.offsetWidth;
+    requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('theme-swap')));
+  }
+  themeBtn.addEventListener('click', () => {
+    if (themeBusy) return;
+    const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+    const lines = THEME_LINES[next];
+    if (window.rbot) window.rbot.chat(lines[(Math.random() * lines.length) | 0], next);
+    if (reduceMotionCard || !document.body.animate) return swapThemeInstant(next);
+    themeBusy = true;
+    const r = themeBtn.getBoundingClientRect();
+    const x = r.left + r.width / 2, y = r.top + r.height / 2;
+    const rad = Math.ceil(Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)));
+    // lingkaran warna baru membesar (hanya transform + opacity = ringan di GPU)
+    const wipe = document.createElement('div');
+    wipe.className = 'theme-wipe';
+    wipe.style.cssText = `left:${x - rad}px;top:${y - rad}px;width:${rad * 2}px;height:${rad * 2}px;background:${next === 'light' ? '#d5dbe4' : '#070709'}`;
+    document.body.appendChild(wipe);
+    const grow = wipe.animate([{ transform: 'scale(0.01)' }, { transform: 'scale(1)' }],
+      { duration: 420, easing: 'cubic-bezier(.5,0,.25,1)', fill: 'forwards' });
+    grow.onfinish = () => {
+      swapThemeInstant(next);
+      const fade = wipe.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, easing: 'ease-out', fill: 'forwards' });
+      fade.onfinish = () => { wipe.remove(); themeBusy = false; };
+    };
+  });
+</script>
+
+<script>
+/* ===== Hujan Neon & Percikan Klik ===== */
+(() => {
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const COLORS = ['#22d3ee', '#38bdf8', '#a855f7', '#e879f9', '#2dd4bf'];
+  const rainCanvas = document.getElementById('neon-rain');
+  const splashCanvas = document.getElementById('click-splash');
+  const rctx = rainCanvas.getContext('2d');
+  const sctx = splashCanvas.getContext('2d');
+  let W = 0, H = 0, dpr = 1;
+  let drops = [];
+  let particles = [];
+
+  function makeDrop(randomY) {
+    const z = Math.random();               // kedalaman: 0 = jauh, 1 = dekat
+    return {
+      x: Math.random() * W,
+      y: randomY ? Math.random() * H : -Math.random() * H * 0.3,
+      len: 10 + z * 22,
+      speed: 2.5 + z * 6,
+      width: 0.6 + z * 1.1,
+      alpha: 0.18 + z * 0.45,
+      color: COLORS[(Math.random() * COLORS.length) | 0]
+    };
+  }
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    for (const c of [rainCanvas, splashCanvas]) {
+      c.width = W * dpr;
+      c.height = H * dpr;
+    }
+    rctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const count = Math.round(Math.min(140, (W * H) / 9000));
+    drops = Array.from({ length: count }, () => makeDrop(true));
+    if (reduceMotion) drawRain(false);
+  }
+
+  function drawRain(move) {
+    rctx.clearRect(0, 0, W, H);
+    rctx.lineCap = 'round';
+    for (const d of drops) {
+      if (move) {
+        d.y += d.speed;
+        d.x -= d.speed * 0.08;
+        if (d.y - d.len > H || d.x < -20) Object.assign(d, makeDrop(false), { x: Math.random() * (W + 40) });
+      }
+      const g = rctx.createLinearGradient(d.x, d.y - d.len, d.x, d.y);
+      g.addColorStop(0, 'transparent');
+      g.addColorStop(1, d.color);
+      rctx.globalAlpha = d.alpha;
+      rctx.strokeStyle = g;
+      rctx.lineWidth = d.width;
+      rctx.shadowColor = d.color;
+      rctx.shadowBlur = 6;
+      rctx.beginPath();
+      rctx.moveTo(d.x + d.len * 0.08, d.y - d.len);
+      rctx.lineTo(d.x, d.y);
+      rctx.stroke();
+    }
+    rctx.globalAlpha = 1;
+    rctx.shadowBlur = 0;
+  }
+
+  function splash(x, y) {
+    const n = reduceMotion ? 8 : 18;
+    const base = COLORS[(Math.random() * COLORS.length) | 0];
+    for (let i = 0; i < n; i++) {
+      const a = (Math.PI * 2 * i) / n + Math.random() * 0.4;
+      const v = 1.5 + Math.random() * 3.5;
+      particles.push({
+        type: 'dot', x, y,
+        vx: Math.cos(a) * v, vy: Math.sin(a) * v - 1.2,
+        r: 1.2 + Math.random() * 2,
+        life: 1, decay: 0.022 + Math.random() * 0.02,
+        color: Math.random() < 0.6 ? base : COLORS[(Math.random() * COLORS.length) | 0]
+      });
+    }
+    particles.push({ type: 'ring', x, y, r: 4, life: 1, decay: 0.04, color: base });
+    if (!splashRunning) { splashRunning = true; requestAnimationFrame(drawSplash); }
+  }
+
+  let splashRunning = false;
+  function drawSplash() {
+    sctx.clearRect(0, 0, W, H);
+    for (const p of particles) {
+      sctx.globalAlpha = Math.max(p.life, 0);
+      sctx.shadowColor = p.color;
+      sctx.shadowBlur = 10;
+      if (p.type === 'ring') {
+        p.r += 3;
+        sctx.strokeStyle = p.color;
+        sctx.lineWidth = 2 * p.life;
+        sctx.beginPath();
+        sctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        sctx.stroke();
+      } else {
+        p.x += p.vx; p.y += p.vy;
+        p.vy += 0.15;           // gravitasi
+        p.vx *= 0.98;
+        sctx.fillStyle = p.color;
+        sctx.beginPath();
+        sctx.arc(p.x, p.y, p.r * p.life + 0.3, 0, Math.PI * 2);
+        sctx.fill();
+      }
+      p.life -= p.decay;
+    }
+    particles = particles.filter(p => p.life > 0);
+    sctx.globalAlpha = 1;
+    sctx.shadowBlur = 0;
+    if (particles.length) requestAnimationFrame(drawSplash);
+    else { splashRunning = false; sctx.clearRect(0, 0, W, H); }
+  }
+
+  window.addEventListener('resize', resize);
+  document.addEventListener('pointerdown', e => splash(e.clientX, e.clientY), { passive: true });
+  resize();
+
+  if (!reduceMotion) {
+    const loop = () => {
+      if (!document.hidden) drawRain(true);
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  }
+})();
+</script>
+
+<script>
+/* ===== Karakter Chibi Anime: pecicilan ===== */
+(() => {
+  const el = document.getElementById('chibi');
+  const rotEl = document.getElementById('chibi-rot');
+  const bubble = document.getElementById('chibi-bubble');
+  const squashEl = document.getElementById('chibi-squash');
+  const antEl = document.getElementById('chibi-antenna');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const CW = 58, BASE = 6, G = 0.0019;
+  const POSES = ['walk', 'run', 'climb', 'hang', 'fall', 'flat', 'jump', 'wave', 'dance', 'dizzy', 'sleep', 'fly', 'fix'];
+  const METEOR_ST = ['mGuard', 'mAlert', 'mBlown', 'mDaze', 'mShocked', 'mPrep', 'mWalk', 'mFix', 'mDone'];
+  const INTRO_ST = ['introHi', 'introOops', 'introFix'];
+  const pick = a => a[(Math.random() * a.length) | 0];
+  const themeBtnX = () => { const b = document.getElementById('theme-toggle'); return b ? b.getBoundingClientRect().left + 21 : innerWidth; };
+  const rand = (a, b) => a + Math.random() * (b - a);
+
+  const LINES = {
+    chat: ['Bip bup! 🤖', 'Scan QRIS-nya ya, manusia~', 'Sistem pembayaran: ONLINE ✅', 'Rii Market paling mantap ✨',
+           'Maks transfer 499K ya!', 'Memuat semangat... 99% 🔋', 'Menunggu transferanmu 👀', 'Aku robot, tapi baper juga 🥺',
+           'Makasih udah mampir! 💙'],
+    run: ['Mode turbo: ON 💨', 'Minggir, minggir! 🚨', 'Kecepatan maksimal! 🔥', 'Bip bip bip bip!'],
+    climb: ['Mode manjat aktif 🧗', 'Mau scan dari atas~', 'Magnet tangan: ON 🧲'],
+    hang: ['Ketinggian terdeteksi 😳', 'Baterai... menipis...', 'Eh... turunnya gimana?'],
+    fall: ['WARNING! WARNING! 🚨', 'Gravitasi jahat!', 'Bip— BIP—!!'],
+    dizzy: ['Error 404: keseimbangan 😵‍💫', 'Reboot dulu...', 'Gyro rusak...', 'Siapa yang naro lantai di sini?'],
+    trip: ['Sensor kaki error 😅', 'Aku sengaja kok!', 'Itu cuma bug kecil...'],
+    dance: ['♪ bip ♫ bup ♪', 'Mode disko 🪩', 'Ayo ikut joget!'],
+    poke: ['Ehh?! 😳', 'Jangan dicolek, nanti korslet! ⚡', 'Hehe, geli 😆', 'Sentuhan terdeteksi!', 'Apaan sih~ 😤'],
+    pokeDown: ['Sedang reboot... 😵', 'Mohon tunggu...', 'Mode hemat daya 💤'],
+    look: ['Hmm? 🤔', 'Memindai area... 📡', '👀'],
+    dragon: ['NAGA?!! 🐉', 'Eh... itu apa? 😨', 'Waduh, ada tamu... 😰'],
+    flee: ['KABUUUR!!! 😱', 'Tolong! Tolong! 🚨', 'Aku bukan sate!! 🍢'],
+    burn: ['Panas panas panas!! 🔥', 'GOSOOONG 🔥😭', 'Overheat!!!'],
+    revive: ['Reboot selesai! 🔄', 'Backup berhasil dipulihkan 💾', 'Ting! Aku hidup lagi ✨'],
+    revived: ['Aku hidup lagi! 🤖✨', 'Untung ada backup 😮‍💨', 'Naga itu lagi... 😤'],
+    sleep: ['Ngantuk... 🥱', 'Mode tidur... 💤', 'Bentar ya, ngecas dulu 🔋'],
+    wake: ['Hoaaam... aku ketiduran 😅', 'Baterai penuh! ⚡', 'Udah pagi? ☀️'],
+    remind: ['Jangan salah transfer ya! ⚠️', 'Cek lagi nomornya sebelum transfer 🔍',
+             'Udah transfer? Kirim buktinya ya 📸'],
+    confirmWA: 'Beli di WA? Konfirmasi ke WA ya 💬',
+    confirmTele: 'Beli di Tele? Konfirmasi ke Tele ya ✈️',
+    meteor: ['METEOR?!! ☄️😱', 'Eh... itu bintang jatuh? 🤔', 'AWAS DARI ATAS!! ☄️'],
+    blown: ['WAAAAA!! 💥', 'BOOOM!! 😵', 'Aaaakk!!'],
+    broken: ['Aduh... semuanya hancur! 😭', 'Waduh, tampilannya berantakan! 😱', 'Sistem rusak parah... 💔'],
+    prep: ['Tenang! Robot tukang beraksi 🛠️', 'Serahkan padaku! 🔧', 'Mode reparasi: ON 🔨'],
+    fix: ['Tok tok tok! 🔨', 'Las dulu... ⚡', 'Kencangkan baut 🔩', 'Pasang lagi~ 🧩', 'Hampir beres... 🛠️'],
+    guard: ['Perisai energi! 🛡️', 'Tahan!! 💪', 'Ga akan kubiarkan! 🛡️'],
+    blocked: ['Tertangkis! 😎🛡️', 'Aman! Ga ada yang rusak ✅', 'Hehe, kalah sama perisaiku 💪'],
+    shieldFail: ['Perisaiku jebol!! 😱', 'Gagal nangkis!! 💥', 'Ga kuat!! 😭'],
+    rage: ['UDAH CUKUP!!! 💢😡', 'JANGAN COLEK-COLEK!!! 😤💢', 'MODE MARAH: ON!!! 🔥😡', 'GRRRR!!! 💢🤖'],
+    calm: ['Hehe... maaf, kebawa emosi 😅', 'Oke, aku tenang lagi~ 😌', 'Fiuh... sistem normal lagi 🔋'],
+    fixed: ['Beres! Semua normal lagi ✅', 'Sudah kuperbaiki! 😎🛠️', 'Sistem pulih 100% 🔋✨']
+  };
+
+  const s = { x: rand(0, Math.max(0, innerWidth - CW)), y: 0, vx: 0, vy: 0, rot: 0, dir: Math.random() < .5 ? 1 : -1,
+              state: 'walk', t: 0, puffT: 0, flipT: 0, next: null, rotFrom: 0 };
+  // Gerak sekunder (biar ga kaku): pegas antena, squash & stretch, condong sesuai kecepatan
+  const fx = { px: s.x, pvx: 0, ant: 0, antV: 0, sq: 0, sqV: 0, lean: 0, rage: 0, shake: 0 };
+  const boing = (v = 0.006) => { fx.sqV += v; fx.antV += rand(-0.5, 0.5); };
+  let bubbleT = 0;
+  const maxX = () => Math.max(0, innerWidth - CW);
+  const topY = () => Math.max(120, Math.min(innerHeight * 0.6, innerHeight - 150));
+
+  function say(text, ms = 1900) {
+    bubble.textContent = text;
+    bubble.classList.add('show');
+    el.classList.add('talking');
+    bubbleT = ms;
+  }
+  function pose(p, face = 'cool') {
+    POSES.forEach(c => el.classList.toggle(c, c === p));
+    el.dataset.face = face;
+  }
+
+  function puff(cx, by, n, o = {}) {
+    for (let i = 0; i < n; i++) {
+      const d = document.createElement('div');
+      const size = rand(o.min || 8, o.max || 16);
+      const side = o.dirX != null ? o.dirX : (Math.random() < .5 ? -1 : 1);
+      d.className = 'chibi-puff';
+      d.style.width = d.style.height = size + 'px';
+      d.style.left = (cx - size / 2 + rand(-4, 4)) + 'px';
+      d.style.bottom = (by + rand(-2, 3)) + 'px';
+      d.style.setProperty('--dx', side * rand(o.dx0 || 8, o.dx1 || 24) + 'px');
+      d.style.setProperty('--dy', -rand(o.dy0 || 4, o.dy1 || 16) + 'px');
+      d.style.setProperty('--life', rand(450, 750) + 'ms');
+      d.addEventListener('animationend', () => d.remove());
+      document.body.appendChild(d);
+    }
+  }
+  function fireP(x, by, dx, dy, size, life, sc = 1.6, spark = false) {
+    const d = document.createElement('div');
+    d.className = 'dragon-fire' + (spark ? ' spark' : '');
+    d.style.width = d.style.height = size + 'px';
+    d.style.left = (x - size / 2) + 'px';
+    d.style.bottom = (by - size / 2) + 'px';
+    d.style.setProperty('--dx', dx + 'px');
+    d.style.setProperty('--dy', dy + 'px');
+    d.style.setProperty('--s', sc);
+    d.style.setProperty('--life', life + 'ms');
+    d.addEventListener('animationend', () => d.remove());
+    document.body.appendChild(d);
+  }
+  function zzz() {
+    const z = document.createElement('div');
+    z.className = 'chibi-z';
+    z.textContent = Math.random() < .5 ? 'z' : 'Z';
+    z.style.fontSize = rand(10, 15) + 'px';
+    z.style.left = (s.x + CW / 2 + s.dir * 12) + 'px';
+    z.style.bottom = (BASE + 62) + 'px';
+    z.style.setProperty('--dx', s.dir * rand(8, 20) + 'px');
+    z.addEventListener('animationend', () => z.remove());
+    document.body.appendChild(z);
+  }
+  const feetX = () => s.x + CW / 2;
+  const pills = document.getElementById('pill-container');
+  const cardEl = document.getElementById('card-scene');
+  function cardTop() {
+    const r = cardEl.getBoundingClientRect();
+    return { left: r.left, right: r.right, y: Math.max(20, Math.min(innerHeight - BASE - r.top, innerHeight - 100)) };
+  }
+  const TOUR = ['copyHop', 'fly', 'perch', 'cardWalk', 'descend'];
+  const dust = (n = 10) => puff(feetX(), BASE, n, { min: 12, max: 24, dx0: 18, dx1: 46, dy0: 4, dy1: 22 });
+
+  function go(state, opts = {}) {
+    s.state = state;
+    s.t = opts.t != null ? opts.t : 0;
+    switch (state) {
+      case 'walk':  pose('walk'); s.t = opts.t || rand(2500, 6000); break;
+      case 'run':   pose('run', 'happy'); s.t = opts.t || rand(1200, 2600); if (!opts.quiet) say(pick(LINES.run), 1300);
+                    s.tripAt = Math.random() < .3 ? rand(300, s.t - 200) : -1; break;
+      case 'skid':  fx.antV += s.dir * 0.6; pose('walk', 'shock'); s.vx = s.dir * 0.16; s.t = 380; break;
+      case 'idle':  pose('', 'cool'); s.t = opts.t || rand(900, 2200); break;
+      case 'rage':  pose('', 'angry'); el.classList.add('raging'); s.t = 3000; s.vx = s.vy = 0; s.y = 0; s.rot = 0; s.puffT = 0;
+                    fx.sqV += 0.012; fx.antV += 1.5; dust(18); say(pick(LINES.rage), 2600); break;
+      // --- intro ---
+      case 'introHi':   pose('wave', 'happy'); s.t = 1e9; break;
+      case 'introOops': pose('', 'shock'); s.t = 1e9; fx.sqV += 0.006; fx.antV -= 1; break;
+      case 'introFix':  pose('fix', 'effort'); el.classList.add('tooling'); s.t = 1e9; break;
+      case 'wave':  pose('wave', 'happy');
+                    s.seqT = 0;
+                    if (opts.quiet) { s.t = opts.t || 1900; break; }
+                    if (opts.remind && (++remindN % 2 === 1 || Math.random() < .35)) {
+                      // urutan tersinkron: WA dulu, lalu lanjut Tele
+                      s.t = 5600; s.seqT = 2700; say(LINES.confirmWA, 2700); hintBtn('wa-btn');
+                    }
+                    else if (opts.remind || Math.random() < .5) { s.t = 2800; say(pick(LINES.remind), 2800); }
+                    else { s.t = 1900; say(pick(LINES.chat)); }
+                    break;
+      case 'dance': pose('dance', 'happy'); s.t = rand(1800, 3000); say(pick(LINES.dance), 1500); break;
+      case 'look':  pose('', 'cool'); s.t = 1500; s.flipT = 380; say(pick(LINES.look), 1200); break;
+      case 'jump':  fx.sqV -= 0.005; pose('jump', opts.face || 'happy'); s.vy = opts.vy || 0.6; s.vx = s.dir * (opts.vx != null ? opts.vx : 0.05);
+                    puff(feetX(), BASE, 4, { min: 8, max: 14 }); break;
+      case 'toWall':
+        s.dir = s.x + CW / 2 < innerWidth / 2 ? -1 : 1;
+        pose('run', 'happy'); say(pick(LINES.climb), 1500); break;
+      case 'climb': pose('climb', 'effort'); s.slipAt = Math.random() < .3 ? rand(60, topY() - 20) : -1; break;
+      case 'hang':  pose('hang', 'shock'); s.t = 1300; say(pick(LINES.hang), 1300); break;
+      case 'fall':  pose('fall', 'shock'); s.vy = 0; s.vx = -s.dir * 0.09; s.spin = -s.dir * 0.55; say(pick(LINES.fall), 1400); break;
+      case 'trip':  pose('flat', 'shock'); s.t = 220; s.rotFrom = s.rot; s.vx = s.dir * 0.14; break;
+      case 'flat':  pose('flat', opts.face || 'dizzy'); s.t = opts.t || 1100; break;
+      case 'getup': pose('', 'dizzy'); s.t = 350; s.rotFrom = s.rot; s.next = opts.next || 'idle'; break;
+      case 'dizzy': pose('dizzy', 'dizzy'); s.t = 1700; say(pick(LINES.dizzy), 1700); break;
+      case 'alert': pose('', 'shock'); s.dir = -1; s.t = 750; s.rot = 0; say(pick(LINES.dragon), 900); fx.sqV += 0.006; break;
+      case 'flee':  pose('run', 'shock'); s.dir = 1; s.t = 6000; s.mentok = false; say(pick(LINES.flee), 2000); break;
+      case 'burnt': pose('', 'shock'); el.classList.add('charred'); s.t = 1100; s.burnT = 0; say(pick(LINES.burn), 1100); break;
+      case 'ash':   pose('', 'cool'); el.classList.remove('charred'); el.classList.add('ashed');
+                    puff(feetX(), BASE, 12, { min: 10, max: 22, dx0: 10, dx1: 36, dy0: 6, dy1: 28 });
+                    bubble.classList.remove('show'); el.classList.remove('talking'); s.t = 2600; break;
+      case 'revive':el.classList.remove('ashed'); el.classList.add('reviving'); pose('', 'happy'); s.t = 900;
+                    for (let i = 0; i < 14; i++) fireP(feetX() + rand(-18, 18), BASE + rand(0, 40), rand(-20, 20), -rand(20, 60), rand(6, 12), rand(500, 900), 1.2, true);
+                    say(pick(LINES.revive), 1500); break;
+      case 'copyHop': pose('jump', 'happy'); s.t = 650; fx.sqV -= 0.004; s.rot = 0; break;
+      case 'fly': {
+        const c = cardTop();
+        pose('fly', 'happy'); s.rot = 0;
+        s.fx0 = s.x; s.fy0 = s.y;
+        s.fx1 = Math.min(Math.max(c.left + rand(0.25, 0.75) * (c.right - c.left) - CW / 2, 0), maxX());
+        s.fy1 = c.y;
+        s.dir = s.fx1 >= s.fx0 ? 1 : -1;
+        s.fk = 0; s.fd = Math.min(1500, Math.max(800, Math.hypot(s.fx1 - s.fx0, s.fy1 - s.fy0) / 0.5));
+        break;
+      }
+      case 'perch': pose('', 'happy'); s.t = 2600; s.rot = 0;
+                    say('Mau ganti metode? Tombolnya di atas sini ☝️', 2600);
+                    pills.classList.remove('robot-hint'); void pills.offsetWidth; pills.classList.add('robot-hint'); break;
+      case 'cardWalk': {
+        const c = cardTop();
+        pose('walk', 'cool');
+        const L = Math.max(0, c.left - CW / 2), Rr = Math.min(maxX(), c.right - CW / 2);
+        s.edge = (s.x - L < Rr - s.x) ? -1 : 1;
+        s.dir = s.edge; break;
+      }
+      case 'descend': pose('climb', 'happy'); s.dir = -s.edge; say('Pilih ini ya untuk ganti metode 😉', 3200); break;
+      case 'sleep': pose('sleep', 'sleep'); s.t = rand(8000, 13000); s.zT = 600; say(pick(LINES.sleep), 1400); break;
+      case 'wake':  pose('', 'happy'); s.t = 1500; say(pick(LINES.wake), 1700); fx.antV -= 0.8; break;
+      // --- meteor ---
+      case 'mGuard':  pose('', 'effort'); s.t = 1e9; s.dir = mt.ix >= feetX() ? 1 : -1; say(pick(LINES.guard), 1400); fx.antV -= 1; boing(0.006); break;
+      case 'guard':   pose('', 'effort'); s.dir = -1; s.t = 1e9; s.rot = 0; say(pick(LINES.guard), 1300); fx.antV -= 1; boing(0.006); break;
+      case 'mAlert':  pose('', 'shock'); s.rot = 0; s.dir = opts.face; s.t = 99999; say(pick(LINES.meteor), 1800); fx.sqV += 0.006; fx.antV -= 0.9; break;
+      case 'mBlown':  pose('fall', 'shock'); el.classList.remove('sleep'); s.vy = 0.72; s.vx = opts.vx; s.spin = (opts.vx > 0 ? 1 : -1) * 0.7;
+                      s.dir = opts.vx > 0 ? -1 : 1; say(pick(LINES.blown), 1200); break;
+      case 'mDaze':   pose('flat', 'dizzy'); s.t = 700; s.rotFrom = s.rot; break;
+      case 'mShocked':pose('dizzy', 'dizzy'); s.rot = 0; s.t = 1000; say(pick(LINES.broken), 1100); break;
+      case 'mPrep':   pose('', 'effort'); el.classList.add('tooling'); s.t = 650; say(pick(LINES.prep), 1000); fx.antV -= 0.8; boing(0.005); break;
+      case 'mWalk':   pose('run', 'effort'); s.dir = s.tx >= s.x ? 1 : -1; break;
+      case 'mFix':    pose('fix', 'effort'); s.t = 480; if (Math.random() < .5) say(pick(LINES.fix), 600); break;
+      case 'mDone':   el.classList.remove('tooling'); pose('wave', 'happy'); s.t = 2000; say(pick(LINES.fixed), 2000); boing(0.006); break;
+    }
+  }
+
+  function chooseNext() {
+    const table = [['walk', 26], ['run', 16], ['idle', 9], ['wave', 13], ['dance', 8], ['jump', 8], ['toWall', 11], ['look', 9], ['sleep', 6]];
+    let r = Math.random() * table.reduce((a, b) => a + b[1], 0);
+    for (const [name, w] of table) { if ((r -= w) <= 0) {
+      if ((name === 'walk' || name === 'run') && Math.random() < .35) s.dir *= -1;
+      return go(name);
+    } }
+  }
+
+  let remindT = rand(9000, 14000), remindN = 0;
+  function hintBtn(id) {
+    const b = document.getElementById(id);
+    if (!b) return;
+    b.classList.remove('robot-hint'); void b.offsetWidth; b.classList.add('robot-hint');
+    clearTimeout(b._hintT); b._hintT = setTimeout(() => b.classList.remove('robot-hint'), 2700);
+  }
+  function tick(dt) {
+    const mx = maxX();
+    // Pengingat rutin soal transfer & konfirmasi
+    remindT -= dt;
+    if (remindT <= 0 && ['walk', 'idle', 'look'].includes(s.state)) {
+      remindT = rand(20000, 32000);
+      return go('wave', { remind: true });
+    }
+    switch (s.state) {
+      case 'walk':
+        s.x += s.dir * 0.05 * dt;
+        break;
+      case 'wave':
+        if (s.seqT > 0 && (s.seqT -= dt) <= 0) { say(LINES.confirmTele, 2800); hintBtn('tele-btn'); fx.antV += 0.6; }
+        break;
+      case 'run':
+      case 'toWall':
+        s.x += s.dir * 0.17 * dt;
+        s.puffT -= dt;
+        if (s.puffT <= 0) { s.puffT = 70; puff(feetX() - s.dir * 14, BASE, 1, { dirX: -s.dir, min: 7, max: 15, dx0: 10, dx1: 26, dy0: 4, dy1: 14 }); }
+        if (s.state === 'run' && s.tripAt > 0 && s.t < s.tripAt) { s.tripAt = -1; return go('trip'); }
+        if (s.state === 'toWall' && (s.x <= 0 || s.x >= mx)) { s.x = s.x <= 0 ? 0 : mx; return go('climb'); }
+        break;
+      case 'skid':
+        s.x += s.vx * dt; s.vx *= Math.pow(0.992, dt);
+        s.puffT -= dt;
+        if (s.puffT <= 0) { s.puffT = 60; puff(feetX() + s.dir * 10, BASE, 1, { dirX: s.dir, min: 8, max: 14 }); }
+        break;
+      case 'flee':
+        s.x += s.dir * 0.21 * dt;
+        s.puffT -= dt;
+        if (s.puffT <= 0) { s.puffT = 55; puff(feetX() - s.dir * 14, BASE, 1, { dirX: -s.dir, min: 8, max: 16, dx0: 12, dx1: 28, dy0: 4, dy1: 14 }); }
+        if (!s.mentok && s.x >= maxX() - 1) { s.mentok = true; say('Mentok!! 😭', 1500); }
+        if (s.x >= maxX()) { s.x = maxX(); s.dir = 1; }
+        break;
+      case 'burnt':
+        s.burnT -= dt;
+        if (s.burnT <= 0) { s.burnT = 45; fireP(feetX() + rand(-16, 16), BASE + rand(5, 45), rand(-8, 8), -rand(25, 55), rand(10, 20), rand(400, 650), 1.3); }
+        if (Math.random() < dt / 120) puff(feetX() + rand(-10, 10), BASE + 60, 1, { min: 8, max: 14, dy0: 20, dy1: 40 });
+        break;
+      case 'fly': {
+        s.fk = Math.min(1, s.fk + dt / s.fd);
+        const k = s.fk, e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+        s.fy1 = cardTop().y;
+        s.x = s.fx0 + (s.fx1 - s.fx0) * e;
+        s.y = s.fy0 + (s.fy1 - s.fy0) * e + Math.sin(Math.PI * k) * 45;
+        s.rot = s.dir * 12 * Math.sin(Math.PI * k);
+        s.puffT -= dt;
+        if (s.puffT <= 0) { s.puffT = 35; fireP(feetX() + rand(-8, 8), BASE + s.y + 2, rand(-5, 5), rand(14, 30), rand(6, 11), rand(250, 380), 0.6); }
+        if (k >= 1) { s.rot = 0; s.y = s.fy1; boing(0.007); puff(feetX(), BASE + s.y, 6, { min: 8, max: 14 }); return go('perch'); }
+        break;
+      }
+      case 'perch':
+        s.y = cardTop().y;
+        break;
+      case 'cardWalk': {
+        const c = cardTop();
+        s.y = c.y;
+        const tx = s.edge < 0 ? Math.max(0, c.left - CW / 2) : Math.min(maxX(), c.right - CW / 2);
+        s.x += s.dir * 0.06 * dt;
+        if ((s.edge < 0 && s.x <= tx) || (s.edge > 0 && s.x >= tx)) { s.x = tx; return go('descend'); }
+        break;
+      }
+      case 'descend':
+        s.y -= 0.12 * dt;
+        if (Math.random() < dt / 300) puff(feetX() + s.dir * 18, BASE + s.y + 50, 1, { dirX: s.dir, min: 4, max: 7, dy0: -18, dy1: -6 });
+        if (s.y <= 0) { s.y = 0; boing(0.006); puff(feetX(), BASE, 5, { min: 8, max: 15 }); go('wave', { remind: true }); return; }
+        break;
+      case 'sleep':
+        s.zT -= dt;
+        if (s.zT <= 0) { s.zT = 1000; zzz(); }
+        break;
+      case 'look':
+        s.flipT -= dt;
+        if (s.flipT <= 0) { s.flipT = 420; s.dir *= -1; }
+        break;
+      case 'jump':
+      case 'fall':
+        s.vy -= G * dt;
+        s.y += s.vy * dt;
+        s.x += s.vx * dt;
+        if (s.state === 'fall') s.rot += s.spin * dt;
+        if (s.y <= 0 && s.vy < 0) {
+          s.y = 0;
+          boing(s.state === 'jump' ? 0.006 : 0.009);
+          if (s.state === 'jump') { puff(feetX(), BASE, 5, { min: 8, max: 15 }); return go('idle', { t: rand(300, 700) }); }
+          s.rot = s.dir * 90;                // mendarat tengkurap
+          dust(14);
+          return go('flat', { face: 'dizzy' });
+        }
+        break;
+      case 'climb':
+        s.y += 0.06 * dt;
+        if (Math.random() < dt / 260) puff(feetX() - s.dir * 20, BASE + s.y + 10, 1, { dirX: -s.dir, min: 4, max: 7, dy0: -18, dy1: -6 });
+        if (s.slipAt > 0 && s.y > s.slipAt) return go('fall');
+        if (s.y >= topY()) { s.y = topY(); return go('hang'); }
+        break;
+      case 'trip': {
+        const k = 1 - Math.max(s.t, 0) / 220;
+        s.rot = s.rotFrom + (s.dir * 90 - s.rotFrom) * k;
+        s.x += s.vx * dt; s.vx *= Math.pow(0.99, dt);
+        if (s.t <= 0) { s.rot = s.dir * 90; dust(10); boing(0.004); go('flat', { face: 'shock', t: 900 }); s.afterFlat = 'trip'; return; }
+        break;
+      }
+      case 'getup': {
+        const k = 1 - Math.max(s.t, 0) / 350;
+        s.rot = s.rotFrom * (1 - k);
+        break;
+      }
+      // --- meteor ---
+      case 'mBlown':
+        s.vy -= G * dt;
+        s.y += s.vy * dt;
+        s.x += s.vx * dt;
+        s.rot += s.spin * dt;
+        if (s.y <= 0 && s.vy < 0) {
+          s.y = 0; boing(0.009); dust(14);
+          s.rot = (s.vx > 0 ? 1 : -1) * 90;
+          return go('mDaze');
+        }
+        break;
+      case 'rage': {
+        // jangan sampai badan besarnya keluar layar
+        const half = CW * 0.7;
+        s.x = Math.min(Math.max(s.x, half), Math.max(half, mx - half));
+        s.puffT -= dt;
+        if (s.puffT <= 0 && s.t > 500) {
+          s.puffT = 110;
+          const top = BASE + 78 * (1 + 1.3 * fx.rage);
+          puff(feetX() + rand(-20, 20), top - 10, 1, { min: 10, max: 18, dx0: 6, dx1: 22, dy0: -30, dy1: -10 });
+          if (Math.random() < .35) { boing(0.003); dust(3); }
+        }
+        break;
+      }
+      case 'mDaze':
+        if (s.t < 350) s.rot = s.rotFrom * Math.max(0, s.t) / 350;
+        break;
+      case 'mWalk':
+        s.x += s.dir * 0.34 * dt;
+        s.puffT -= dt;
+        if (s.puffT <= 0) { s.puffT = 70; puff(feetX() - s.dir * 14, BASE, 1, { dirX: -s.dir, min: 7, max: 14, dx0: 10, dx1: 24, dy0: 4, dy1: 14 }); }
+        if ((s.dir > 0 && s.x >= s.tx) || (s.dir < 0 && s.x <= s.tx)) { s.x = s.tx; return go('mFix'); }
+        break;
+      case 'mFix': {
+        const hit = Math.sin(rig.phase);
+        if (hit > 0.85 && !s.hitOn) {
+          s.hitOn = true; boing(0.0025);
+          const hx = feetX() + s.dir * 24;
+          for (let i = 0; i < 5; i++) fireP(hx + rand(-4, 4), BASE + 22 + rand(-3, 3), s.dir * rand(4, 26), rand(-6, 22), rand(4, 8), rand(220, 420), 0.5, true);
+        } else if (hit < 0.3) s.hitOn = false;
+        break;
+      }
+    }
+
+    if (!['fall', 'climb', 'hang', 'toWall', 'flee', ...TOUR, ...METEOR_ST].includes(s.state)) {
+      if (s.x <= 0) { s.x = 0; s.dir = 1; }
+      if (s.x >= mx) { s.x = mx; s.dir = -1; }
+    } else {
+      s.x = Math.min(Math.max(s.x, 0), mx);
+    }
+    if (s.y > topY() && s.state !== 'fall' && s.state !== 'mBlown' && !TOUR.includes(s.state)) s.y = topY();
+
+    s.t -= dt;
+    if (s.t <= 0 && !['jump', 'fall', 'climb', 'toWall', 'trip', 'flee', 'fly', 'cardWalk', 'descend', 'mAlert', 'mGuard', 'guard', 'mBlown', 'mWalk'].includes(s.state)) {
+      switch (s.state) {
+        case 'run':   if (Math.random() < .5) go('skid'); else chooseNext(); break;
+        case 'hang':  go('fall'); break;
+        case 'alert':
+          // ada peluang robot berani menangkis semburan api
+          if (Math.random() < 0.55) { dg.guard = true; dg.guardOk = Math.random() < 0.6; go('guard'); }
+          else go('flee');
+          break;
+        case 'burnt': go('ash'); break;
+        case 'rage':  el.classList.remove('raging'); boing(0.008); go('idle', { t: 1900 }); el.dataset.face = 'happy'; say(pick(LINES.calm), 1900); break;
+        case 'ash':   go('revive'); break;
+        case 'revive': el.classList.remove('reviving'); go('idle', { t: 1800 }); el.dataset.face = 'happy'; say(pick(LINES.revived), 1800); break;
+        case 'sleep': go('wake'); break;
+        case 'copyHop': go('fly'); break;
+        case 'perch': pills.classList.remove('robot-hint'); go('cardWalk'); break;
+        case 'flat':  if (s.afterFlat === 'trip') { s.afterFlat = null; go('getup', { next: 'tripTalk' }); }
+                      else go('getup', { next: 'dizzy' }); break;
+        case 'getup': s.rot = 0;
+                      if (s.next === 'tripTalk') { go('idle', { t: 1600 }); el.dataset.face = 'happy'; say(pick(LINES.trip), 1600); }
+                      else go(s.next); break;
+        case 'mDaze':    s.rot = 0; go('mShocked'); break;
+        case 'mShocked': go('mPrep'); break;
+        case 'mPrep':    nextRepair(); break;
+        case 'mFix':     finishFix(); break;
+        default: chooseNext();
+      }
+    }
+
+    if (bubbleT > 0) { bubbleT -= dt; if (bubbleT <= 0) { bubble.classList.remove('show'); el.classList.remove('talking'); } }
+  }
+
+  function physics(dt) {
+    const vxw = (s.x - fx.px) / dt;
+    const dvx = vxw - fx.pvx;
+    fx.px = s.x; fx.pvx = vxw;
+    const grounded = (s.y <= 0 || s.state === 'cardWalk' || s.state === 'perch') && !['fall', 'flat', 'trip', 'getup', 'mBlown', 'mDaze'].includes(s.state);
+    // antena: pegas teredam, terdorong oleh perubahan kecepatan
+    fx.antV += -dvx * 4 + (-(fx.ant - (s.state === 'sleep' ? 30 : 0)) * 0.0014 - fx.antV * 0.009 - vxw * 0.06 * (grounded ? 1 : 0)) * dt;
+    if (s.state === 'jump' || s.state === 'fall') fx.antV += (s.vy > 0 ? 0.004 : -0.004) * dt * Math.sign(fx.ant || 1);
+    fx.ant = Math.max(-45, Math.min(45, fx.ant + fx.antV * dt));
+    // membesar saat marah, lalu kembali normal
+    const rageT = s.state === 'rage' && s.t > 450 ? 1 : 0;
+    fx.rage += (rageT - fx.rage) * Math.min(1, dt / (rageT ? 140 : 110));
+    if (fx.rage < 0.002 && !rageT) fx.rage = 0;
+    fx.shake = s.state === 'rage' ? fx.rage * 2.2 : 0;
+    // squash & stretch
+    fx.sqV += (-fx.sq * 0.0011 - fx.sqV * 0.013) * dt;
+    fx.sq = Math.max(-0.25, Math.min(0.3, fx.sq + fx.sqV * dt));
+    // condong ke arah gerak
+    const leanT = grounded ? Math.max(-13, Math.min(13, vxw * 75)) : 0;
+    fx.lean += (leanT - fx.lean) * Math.min(1, dt / 90);
+  }
+
+  function render() {
+    const sy = 1 - fx.sq, sx = 1 + fx.sq * 0.7;
+    squashEl.style.transform = `rotate(${fx.lean.toFixed(2)}deg) scale(${sx.toFixed(3)}, ${sy.toFixed(3)})`;
+    antEl.style.transform = `rotate(${(fx.ant * (s.dir < 0 ? -1 : 1)).toFixed(2)}deg)`;
+    const lift = Math.abs(Math.sin(s.rot * Math.PI / 180)) * 19;
+    el.style.transform = `translate(${s.x}px, ${-(s.y + lift)}px)`;
+    const big = 1 + 1.3 * fx.rage;
+    const shk = fx.shake ? `translate(${rand(-fx.shake, fx.shake).toFixed(1)}px, ${rand(-fx.shake, 0).toFixed(1)}px) ` : '';
+    rotEl.style.transform = (shk + (fx.rage ? `scale(${big.toFixed(3)}) ` : '') + (s.rot ? `rotate(${s.rot}deg)` : '')).trim();
+    bubble.style.marginBottom = fx.rage ? (4 + 78 * (big - 1)).toFixed(1) + 'px' : '';
+    el.classList.toggle('left', s.dir < 0);
+    el.classList.toggle('b-left', s.x < 50);
+    el.classList.toggle('b-right', s.x > maxX() - 50);
+  }
+
+  // ===== Rig lentur: tangan & kaki digerakkan prosedural (bukan rotasi kaku) =====
+  const R = id => document.getElementById(id);
+  const rig = {
+    legL: R('rb-leg-l'), legR: R('rb-leg-r'), footL: R('rb-foot-l'), footR: R('rb-foot-r'),
+    armL: R('rb-arm-l'), armR: R('rb-arm-r'), handL: R('rb-hand-l'), handR: R('rb-hand-r'),
+    body: R('rb-body'), head: R('rb-head'), tool: R('rb-tool'),
+    phase: 0, time: 0, cur: null
+  };
+  const HIP = { l: [23.5, 61], r: [36.5, 61] }, SHO = { l: [13, 44], r: [47, 44] };
+  const FOOT0 = { l: [23.5, 74], r: [36.5, 74] };
+  const SPEED = { walk: 0.015, run: 0.028, climb: 0.017, dance: 0.0126, dizzy: 0.009, fall: 0.022, hang: 0.006, skid: 0.03, idle: 0.003, wave: 0.004, jump: 0.004, flat: 0.008, sleep: 0.0016, stretch: 0.01, fly: 0.012, point: 0.006, fix: 0.03, rage: 0.02 };
+  const gaitOf = st => ({ copyHop: 'jump', perch: 'point', cardWalk: 'walk', descend: 'climb', toWall: 'run', look: 'idle', getup: 'idle', trip: 'flat', alert: 'idle', flee: 'run', burnt: 'fall', ash: 'idle', revive: 'idle', wake: 'stretch',
+    introHi: 'wave', introOops: 'idle', introFix: 'fix',
+    mGuard: 'point', guard: 'point', mAlert: 'point', mBlown: 'fall', mDaze: 'flat', mShocked: 'dizzy', mPrep: 'stretch', mWalk: 'run', mFix: 'fix', mDone: 'wave' })[st] || st;
+
+  function target(g, p, t) {
+    const S = Math.sin, C = Math.cos, q = p + Math.PI;
+    const o = { // offset kaki [dx,dy,bend,angle], tangan [dx,dy,bend], badan bobY, kepala rot
+      fl: [0, 0, 1.5, 0], fr: [0, 0, 1.5, 0], hl: [-2, 12, -1.5], hr: [2, 12, 1.5], bob: S(t * 0.004) * 0.5, hd: 0 };
+    const step = (P, stride, lift) => [S(P) * stride, -Math.max(0, C(P)) * lift, 2 + Math.max(0, C(P)) * lift * 0.9, -Math.max(0, C(P)) * 16 + Math.max(0, -C(P)) * 4];
+    switch (g) {
+      case 'walk':
+        o.fl = step(p, 4, 3.2); o.fr = step(q, 4, 3.2);
+        o.hl = [-2 - S(p) * 3.5, 11.5, -2 - S(p) * 1.5]; o.hr = [2 - S(q) * 3.5, 11.5, 2 + S(q) * 1.5];
+        o.bob = -Math.abs(C(p)) * 1.8 + 0.6; o.hd = S(p * 2) * 1.5; break;
+      case 'run':
+        o.fl = step(p, 7, 6); o.fr = step(q, 7, 6);
+        o.hl = [-1 - S(p) * 6, 8.5 - Math.abs(S(p)) * 2, -5]; o.hr = [1 - S(q) * 6, 8.5 - Math.abs(S(q)) * 2, 5];
+        o.bob = -Math.abs(C(p)) * 3 + 1; o.hd = -4 + S(p * 2) * 2; break;
+      case 'skid':
+        o.fl = [6, 0, -2.5, -18]; o.fr = [-3, -1, 3, 8];
+        o.hl = [-7, 3 + S(p) * 1.5, 4]; o.hr = [-5, 2 + C(p) * 1.5, 4]; o.bob = 1.5; o.hd = 6; break;
+      case 'idle':
+        o.hl = [-2.5, 11.5 + S(t * 0.004) * 0.6, -1.5]; o.hr = [2.5, 11.5 + S(t * 0.004) * 0.6, 1.5]; o.hd = S(t * 0.0022) * 2; break;
+      case 'wave':
+        o.hr = [9 + S(t * 0.02) * 3.5, -11 + C(t * 0.02) * 1.2, -5]; o.hl = [-2.5, 11.5, -1.5]; o.hd = -6; break;
+      case 'dance':
+        o.fl = [S(p) * 2, -Math.max(0, S(p)) * 5, 3, 0]; o.fr = [S(p) * 2, -Math.max(0, -S(p)) * 5, 3, 0];
+        o.hl = [-6 + C(p) * 2, -6 + S(p) * 9, 4]; o.hr = [6 + C(p) * 2, -6 - S(p) * 9, -4];
+        o.bob = -Math.abs(S(p)) * 2.5; o.hd = S(p) * 8; break;
+      case 'jump':
+        o.fl = [-3, -6, 6, -10]; o.fr = [3, -3.5, 4, -20];
+        o.hl = [-7, -9, 4]; o.hr = [7, -9, -4]; o.bob = -1; o.hd = -4; break;
+      case 'climb':
+        o.fl = [3, -(S(p) + 1) * 3.5, 6, -15]; o.fr = [3, -(S(q) + 1) * 3.5, 6, -15];
+        o.hl = [5, -9 + S(q) * 4.5, -4]; o.hr = [5, -9 + S(p) * 4.5, -4]; o.bob = S(p * 2) * 0.8; o.hd = S(p) * 3; break;
+      case 'hang':
+        o.fl = [S(p) * 3, 2, -1.5, 0]; o.fr = [S(q) * 3, 2, -1.5, 0];
+        o.hl = [3, -13, -2]; o.hr = [3, -13, -2]; o.bob = 2; o.hd = S(p) * 4; break;
+      case 'fall':
+        o.fl = [S(p * 1.3) * 6, -Math.abs(C(p)) * 5, S(p) * 5, S(p) * 25]; o.fr = [S(q * 1.3) * 6, -Math.abs(C(q)) * 5, S(q) * 5, S(q) * 25];
+        o.hl = [-7 - C(p * 1.5) * 3, -8 + S(p * 1.5) * 5, 5]; o.hr = [7 + C(q * 1.5) * 3, -8 + S(q * 1.5) * 5, -5]; o.hd = S(p * 2) * 6; break;
+      case 'flat':
+        o.fl = [-2 + S(p) * 1.2, -Math.max(0, S(p)) * 2.5, 0, 10]; o.fr = [-1, -Math.max(0, S(q)) * 2.5, 0, 10];
+        o.hl = [0, -12, 0]; o.hr = [3, -12, 0]; break;
+      case 'fly':
+        o.fl = [-3 + S(p) * 1.5, 1, -2.5, 18]; o.fr = [-1 + S(q) * 1.5, 0, -2.5, 14];
+        o.hl = [-8, 3 + S(p * 2) * 1.5, 3]; o.hr = [-6, 3 + S(q * 2) * 1.5, 3]; o.bob = 0; o.hd = -5; break;
+      case 'point':
+        o.hr = [5 + S(p) * 1, -15 + C(p * 2) * 1.5, -2]; o.hl = [-3, 10, -2]; o.hd = -9; o.bob = -0.5; break;
+      case 'sleep':
+        o.fl = [5, -0.5, 4.5, -8]; o.fr = [6.5, -0.5, 4.5, -8];
+        o.hl = [3, 8.5, -2]; o.hr = [4.5, 8.5, 2]; o.bob = 6.5 + S(p) * 0.7; o.hd = 13 + S(p) * 2.5; break;
+      case 'stretch':
+        o.hl = [-4, -14 + S(p) * 1.5, 1]; o.hr = [4, -14 - S(p) * 1.5, -1]; o.bob = -1.5; o.hd = -8 + S(p) * 2; break;
+      case 'fix':
+        o.fl = [-4, 0, 3, 0]; o.fr = [4, 0, 3, 0];
+        o.hr = [9 + S(p) * 2, 1 + S(p) * 6, -3]; o.hl = [3, 6, -2];
+        o.bob = 2 + Math.max(0, S(p)) * 1.2; o.hd = 7 + S(p) * 2; break;
+      case 'rage':
+        // menghentak kaki & mengepalkan tangan ke atas
+        o.fl = [-3, -Math.max(0, S(p)) * 4, 3, 0]; o.fr = [3, -Math.max(0, -S(p)) * 4, 3, 0];
+        o.hl = [-8 + S(p * 2) * 1.5, -12 + C(p * 2) * 2.5, 4]; o.hr = [8 - S(p * 2) * 1.5, -12 - C(p * 2) * 2.5, -4];
+        o.bob = -Math.abs(S(p)) * 1.5; o.hd = S(p * 2) * 4; break;
+      case 'dizzy':
+        o.fl = [S(p) * 2.5, -Math.max(0, S(p)) * 2, S(p) * 4, S(p) * 10]; o.fr = [-S(p) * 2.5, -Math.max(0, -S(p)) * 2, -S(p) * 4, -S(p) * 10];
+        o.hl = [-7 + S(p) * 2, 7 + C(p) * 2, 4 * S(p)]; o.hr = [7 + S(p) * 2, 7 - C(p) * 2, -4 * S(p)]; o.hd = S(p) * 10; break;
+    }
+    return o;
+  }
+
+  function curve(path, rx, ry, ex, ey, bend) {
+    const dx = ex - rx, dy = ey - ry, len = Math.hypot(dx, dy) || 1;
+    const cx = (rx + ex) / 2 + (dy / len) * bend * 2, cy = (ry + ey) / 2 - (dx / len) * bend * 2;
+    path.setAttribute('d', `M${rx.toFixed(2)} ${ry.toFixed(2)} Q${cx.toFixed(2)} ${cy.toFixed(2)} ${ex.toFixed(2)} ${ey.toFixed(2)}`);
+  }
+
+  function animateRig(dt) {
+    const g = gaitOf(s.state);
+    rig.phase += dt * (SPEED[g] || 0.003);
+    rig.time += dt;
+    const tgt = target(g, rig.phase, rig.time);
+    if (!rig.cur) rig.cur = JSON.parse(JSON.stringify(tgt));
+    // pelunakan: semua sendi mengejar target dengan halus -> transisi antar pose mulus
+    const k = 1 - Math.exp(-dt / (g === 'fall' || g === 'run' ? 35 : 60));
+    for (const key in tgt) {
+      if (Array.isArray(tgt[key])) tgt[key].forEach((v, i) => { rig.cur[key][i] += (v - rig.cur[key][i]) * k; });
+      else rig.cur[key] += (tgt[key] - rig.cur[key]) * k;
+    }
+    const c = rig.cur, b = c.bob;
+    rig.body.setAttribute('transform', `translate(0 ${b.toFixed(2)})`);
+    rig.head.setAttribute('transform', `rotate(${c.hd.toFixed(2)} 30 40)`);
+    [['l', c.fl, rig.legL, rig.footL], ['r', c.fr, rig.legR, rig.footR]].forEach(([side, f, leg, foot]) => {
+      const fx2 = FOOT0[side][0] + f[0], fy2 = FOOT0[side][1] + f[1];
+      curve(leg, HIP[side][0], HIP[side][1] + b, fx2, fy2 - 1, f[2]);
+      foot.setAttribute('transform', `translate(${fx2.toFixed(2)} ${fy2.toFixed(2)}) rotate(${f[3].toFixed(1)})`);
+    });
+    [['l', c.hl, rig.armL, rig.handL], ['r', c.hr, rig.armR, rig.handR]].forEach(([side, a, arm, hand]) => {
+      const sx = SHO[side][0], sy = SHO[side][1] + b, hx = sx + a[0], hy = sy + a[1];
+      curve(arm, sx, sy, hx, hy, a[2]);
+      hand.setAttribute('cx', hx.toFixed(2)); hand.setAttribute('cy', hy.toFixed(2));
+      if (side === 'r') {
+        const ang = g === 'fix' ? 30 + Math.sin(rig.phase) * 45 : g === 'run' ? 55 : 20;
+        rig.tool.setAttribute('transform', `translate(${hx.toFixed(2)} ${hy.toFixed(2)}) rotate(${ang.toFixed(1)})`);
+      }
+    });
+  }
+
+  // ===== Naga: sesekali nongol dari kiri dan menyemburkan api =====
+  const dragonEl = document.getElementById('dragon');
+  const roarEl = document.getElementById('dragon-roar');
+  const MOUTH_X = 90, MOUTH_Y = 54, FIRE_SPEED = 0.6;
+  const dg = { phase: 'off', t: 0, front: 0, spawnT: 0, stopT: -1, next: rand(25000, 40000) };
+  const CALM = ['walk', 'idle', 'look', 'dance', 'wave', 'run'];
+
+  function makeShield(cx, cyTop, w, h) {
+    const d = document.createElement('div');
+    d.className = 'rb-shield';
+    d.style.cssText = `left:${cx - w / 2}px;top:${cyTop - h / 2}px;width:${w}px;height:${h}px`;
+    document.body.appendChild(d);
+    return d;
+  }
+  function shieldHit(d) { if (!d) return; d.classList.remove('hit'); void d.offsetWidth; d.classList.add('hit'); }
+  function shieldEnd(d, broke) {
+    if (!d) return;
+    d.classList.remove('hit');
+    d.classList.add(broke ? 'break' : 'out');
+    if (broke) {
+      const r = d.getBoundingClientRect(), cx = r.left + r.width / 2, by = innerHeight - (r.top + r.height / 2);
+      for (let i = 0; i < 18; i++) { const a = rand(0, Math.PI * 2), v = rand(30, 90); fireP(cx + Math.cos(a) * r.width * 0.4, by + Math.sin(a) * r.height * 0.4, Math.cos(a) * v, Math.sin(a) * v, rand(4, 8), rand(350, 650), 0.6, true); }
+    }
+    setTimeout(() => d.remove(), 500);
+  }
+
+  function dragonUpdate(dt) {
+    switch (dg.phase) {
+      case 'off':
+        dg.next -= dt;
+        if (dg.next <= 0 && mt.phase === 'off' && CALM.includes(s.state) && s.y === 0) {
+          dg.phase = 'enter'; dg.t = 650; dg.guard = false;
+          dragonEl.classList.add('show');
+          go('alert');
+        }
+        break;
+      case 'enter':
+        if ((dg.t -= dt) <= 0) { dg.phase = 'roar'; dg.t = 550; roarEl.classList.add('show'); }
+        break;
+      case 'roar':
+        if ((dg.t -= dt) <= 0) { dg.phase = 'breath'; dg.front = 0; dg.stopT = -1; roarEl.classList.remove('show'); dragonEl.classList.add('breath'); }
+        break;
+      case 'breath':
+        dg.front += FIRE_SPEED * dt;
+        dg.spawnT -= dt;
+        while (dg.spawnT <= 0) {
+          dg.spawnT += 20;
+          const dist = Math.max(30, dg.front + (dg.guard ? rand(-10, 2) : rand(-10, 25)));
+          fireP(MOUTH_X, MOUTH_Y + rand(-4, 4), dist, rand(-16, 12), rand(22, 36), dist / FIRE_SPEED, rand(1.4, 2.2));
+        }
+        if (s.state === 'guard' && dg.guard) {
+          const shX = s.x + 4;               // sisi depan perisai (menghadap naga)
+          if (!dg.shield) { dg.shield = makeShield(s.x + 10, innerHeight - BASE - 40, 40, 92); dg.holdT = 0; }
+          if (MOUTH_X + dg.front >= shX) {
+            dg.front = shX - MOUTH_X;        // api tertahan di perisai
+            dg.holdT += dt;
+            if (Math.random() < dt / 70) {
+              shieldHit(dg.shield);
+              fireP(shX, MOUTH_Y + rand(-14, 14), -rand(10, 40), rand(10, 60), rand(10, 18), rand(250, 450), 1.2);
+              fireP(shX, MOUTH_Y + rand(-10, 10), -rand(0, 20), rand(-20, 40), rand(4, 7), rand(250, 400), 0.6, true);
+            }
+            if (dg.guardOk && dg.holdT > 1500) {
+              dg.guard = false; shieldEnd(dg.shield, false); dg.shield = null;
+              dg.stopT = 0; go('wave', { t: 2200, quiet: true }); say(pick(LINES.blocked), 2200); boing(0.006);
+            } else if (!dg.guardOk && dg.holdT > 800) {
+              dg.guard = false; shieldEnd(dg.shield, true); dg.shield = null;
+              go('burnt'); say(pick(LINES.shieldFail), 1100); dg.stopT = 500;
+            }
+          }
+        }
+        if (dg.stopT < 0 && (s.state === 'flee' || s.state === 'alert') && MOUTH_X + dg.front >= s.x + 14) { go('burnt'); dg.stopT = 500; }
+        if (dg.stopT < 0 && MOUTH_X + dg.front > innerWidth + 100) dg.stopT = 0;
+        if (dg.stopT >= 0 && (dg.stopT -= dt) <= 0) {
+          dg.phase = 'leave'; dg.t = 900;
+          dragonEl.classList.remove('breath');
+          puff(104 - 18, 70, 3, { min: 8, max: 14, dirX: 1, dy0: 10, dy1: 26 });
+        }
+        break;
+      case 'leave':
+        if ((dg.t -= dt) <= 0) { dg.phase = 'off'; dragonEl.classList.remove('show'); dg.next = rand(45000, 80000); }
+        break;
+    }
+  }
+
+
+  // ===== Meteor: menghantam, semua tampilan hancur, robot memperbaikinya =====
+  const meteorEl = document.getElementById('meteor');
+  const PIECES = ['.header', '#pill-container', '#card-scene', '#copy-btn', '#flip-btn', '.confirm-label', '#wa-btn', '#tele-btn'];
+  const qsMeteor = /[?&]meteor\b/.test(location.search);
+  const mt = { phase: 'off', next: qsMeteor ? 2500 : rand(15000, 25000), t: 0, k: 0, pieces: [], cur: null, warnEl: null };
+
+  function fx1(cls, styles) {
+    const d = document.createElement('div');
+    d.className = cls;
+    for (const k in styles) d.style.setProperty(k, styles[k]);
+    d.addEventListener('animationend', () => d.remove());
+    document.body.appendChild(d);
+    return d;
+  }
+
+  function crack(x, y) {
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('class', 'm-crack');
+    let d = '';
+    const rays = 11, maxR = Math.max(innerWidth, innerHeight) * 0.75;
+    for (let i = 0; i < rays; i++) {
+      let a = (i / rays) * Math.PI * 2 + rand(-0.2, 0.2), r = 0, px = x, py = y;
+      d += `M${x.toFixed(1)} ${y.toFixed(1)}`;
+      const len = rand(0.35, 1) * maxR;
+      while (r < len) {
+        r += rand(18, 46); a += rand(-0.35, 0.35);
+        px = x + Math.cos(a) * r; py = y + Math.sin(a) * r;
+        d += ` L${px.toFixed(1)} ${py.toFixed(1)}`;
+        if (Math.random() < 0.25) {
+          const b = a + rand(-1, 1), bl = rand(14, 40);
+          d += ` M${px.toFixed(1)} ${py.toFixed(1)} l${(Math.cos(b) * bl).toFixed(1)} ${(Math.sin(b) * bl).toFixed(1)} M${px.toFixed(1)} ${py.toFixed(1)}`;
+        }
+      }
+    }
+    for (const [w, c] of [[4, 'rgba(251,146,60,0.25)'], [1.4, 'rgba(226,232,240,0.85)']]) {
+      const path = document.createElementNS(NS, 'path');
+      path.setAttribute('d', d); path.setAttribute('fill', 'none'); path.setAttribute('stroke', c);
+      path.setAttribute('stroke-width', w); path.setAttribute('stroke-linejoin', 'round');
+      svg.appendChild(path);
+    }
+    svg.addEventListener('animationend', () => svg.remove());
+    document.body.appendChild(svg);
+  }
+
+  function shatter(ix, iy) {
+    const W = innerWidth, H = innerHeight;
+    const els = PIECES.map(q => document.querySelector(q)).filter(Boolean);
+    // slot lantai diacak supaya puing tersebar
+    const slots = els.map((_, i) => (i + 0.5) / els.length).sort(() => Math.random() - 0.5);
+    mt.pieces = els.map((e, i) => {
+      const r = e.getBoundingClientRect();
+      const cx0 = r.left + r.width / 2, cy0 = r.top + r.height / 2;
+      const big = r.width > 200;
+      const rot = (Math.random() < .5 ? -1 : 1) * (big ? rand(4, 12) : rand(10, 38));
+      const rad = rot * Math.PI / 180;
+      const halfH = (r.width * Math.abs(Math.sin(rad)) + r.height * Math.abs(Math.cos(rad))) / 2;
+      const lo = Math.min(r.width / 2 + 6, W / 2);
+      const cx = Math.min(Math.max(slots[i] * W, lo), W - lo);
+      const cy = H - 4 - halfH;
+      const dx = cx - cx0, dy = cy - cy0;
+      const away = Math.sign(cx0 - ix) || 1;
+      const kick = Math.max(40, 160 - Math.hypot(cx0 - ix, cy0 - iy) * 0.3);
+      const final = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) rotate(${rot.toFixed(1)}deg)`;
+      const mid = `translate(${(dx * 0.35 + away * kick * 0.4).toFixed(1)}px, ${(-kick).toFixed(1)}px) rotate(${(rot * 1.8).toFixed(1)}deg)`;
+      const bounce = `translate(${dx.toFixed(1)}px, ${(dy - 14).toFixed(1)}px) rotate(${(rot * 0.85).toFixed(1)}deg)`;
+      const delay = Math.min(140, Math.hypot(cx0 - ix, cy0 - iy) * 0.25);
+      e.classList.add('m-broken');
+      const anim = e.animate([
+        { transform: 'none', easing: 'cubic-bezier(.2,.7,.4,1)' },
+        { transform: mid, offset: 0.3, easing: 'cubic-bezier(.55,0,1,.6)' },
+        { transform: final, offset: 0.82, easing: 'ease-out' },
+        { transform: bounce, offset: 0.91, easing: 'ease-in' },
+        { transform: final }
+      ], { duration: rand(1150, 1450), delay, fill: 'forwards' });
+      return { el: e, final, dx, dy, rot, cx, anim, fixed: false };
+    });
+  }
+
+  function impact(ix, iy) {
+    meteorEl.classList.remove('show');
+    if (mt.warnEl) { mt.warnEl.remove(); mt.warnEl = null; }
+    fx1('m-flash', { '--fx': ix + 'px', '--fy': iy + 'px' });
+    fx1('m-ring', { left: ix + 'px', top: iy + 'px' });
+    setTimeout(() => fx1('m-ring', { left: ix + 'px', top: iy + 'px' }), 120);
+    crack(ix, iy);
+    const by = innerHeight - iy;
+    for (let i = 0; i < 34; i++) {
+      const a = rand(0, Math.PI * 2), v = rand(60, 220);
+      fireP(ix, by, Math.cos(a) * v, Math.sin(a) * v, rand(16, 34), rand(500, 900), rand(1.2, 2));
+    }
+    for (let i = 0; i < 16; i++) {
+      const a = rand(0, Math.PI * 2), v = rand(40, 140);
+      fireP(ix, by, Math.cos(a) * v, Math.sin(a) * v, rand(5, 9), rand(400, 800), 0.6, true);
+    }
+    puff(ix, by - 10, 14, { min: 22, max: 46, dx0: 20, dx1: 90, dy0: -40, dy1: 60 });
+    const wrap = document.querySelector('.wrapper');
+    if (wrap && wrap.animate) wrap.animate([
+      { translate: '0 0' }, { translate: '-10px 6px' }, { translate: '9px -7px' }, { translate: '-6px 4px' }, { translate: '4px -2px' }, { translate: '0 0' }
+    ], { duration: 420, easing: 'linear' });
+    shatter(ix, iy);
+    // robot terpental oleh gelombang kejut
+    const away = feetX() < ix ? -1 : 1;
+    s.y = Math.max(0, s.y);
+    go('mBlown', { vx: away * rand(0.14, 0.22) });
+  }
+
+  function nextRepair() {
+    const left = mt.pieces.filter(p => !p.fixed);
+    if (!left.length) {
+      mt.phase = 'off'; mt.cur = null; mt.pieces = [];
+      mt.next = rand(80000, 130000);
+      dg.next = Math.max(dg.next, 20000);
+      return go('mDone');
+    }
+    const fxp = feetX();
+    left.sort((a, b) => Math.abs(a.cx - fxp) - Math.abs(b.cx - fxp));
+    mt.cur = left[0];
+    // berdiri sedikit di samping pusat puing supaya palu mengenai puingnya
+    const side = mt.cur.cx >= fxp ? -1 : 1;
+    s.tx = Math.min(Math.max(mt.cur.cx - CW / 2 + side * 18, 0), maxX());
+    if (Math.abs(s.tx - s.x) < 4) { s.x = s.tx; s.dir = mt.cur.cx >= feetX() ? 1 : -1; return go('mFix'); }
+    go('mWalk');
+  }
+
+  function finishFix() {
+    const p = mt.cur;
+    if (p) {
+      p.fixed = true;
+      const e = p.el;
+      const lift = `translate(${(p.dx * 0.5).toFixed(1)}px, ${(p.dy * 0.5 - 40).toFixed(1)}px) rotate(${(-p.rot * 0.4).toFixed(1)}deg) scale(1.04)`;
+      const back = e.animate([{ transform: p.final }, { transform: lift, offset: 0.55 }, { transform: 'none' }],
+        { duration: 480, easing: 'cubic-bezier(.3,1.25,.5,1)', fill: 'forwards' });
+      const fxp = feetX();
+      for (let i = 0; i < 12; i++) fireP(fxp + s.dir * 20 + rand(-20, 20), BASE + rand(5, 30), rand(-20, 20), rand(20, 70), rand(5, 10), rand(500, 900), 1, true);
+      back.onfinish = () => {
+        p.anim.cancel(); back.cancel();
+        e.classList.remove('m-broken');
+        e.classList.remove('m-fixed'); void e.offsetWidth; e.classList.add('m-fixed');
+        setTimeout(() => e.classList.remove('m-fixed'), 650);
+      };
+    }
+    // kalau sedang memperbaiki, robot langsung menuju puing berikutnya
+    nextRepair();
+    if (s.state === 'mWalk' || s.state === 'mFix') say(mt.pieces.filter(q => !q.fixed).length ? pick(['Satu beres! ✅', 'Next! 🔧', 'Oke, berikutnya~']) : 'Terakhir nih!', 650);
+  }
+
+  function meteorUpdate(dt) {
+    switch (mt.phase) {
+      case 'off':
+        mt.next -= dt;
+        if (mt.next <= 0 && dg.phase === 'off' && CALM.includes(s.state) && s.y === 0) {
+          const card = document.getElementById('card-scene').getBoundingClientRect();
+          mt.ix = card.left + card.width / 2 + rand(-30, 30);
+          mt.iy = Math.min(Math.max(card.top + card.height / 2, 80), innerHeight - 140);
+          mt.side = Math.random() < .5 ? -1 : 1;
+          mt.sx = mt.side > 0 ? innerWidth + 120 : -120;
+          mt.sy = -160;
+          mt.phase = 'warn'; mt.t = 1000;
+          // peluang robot mencoba menangkis meteor, dan peluang berhasil
+          mt.block = Math.random() < 0.5; mt.blockOk = Math.random() < 0.6; mt.shield = null;
+          mt.warnEl = document.createElement('div');
+          mt.warnEl.className = 'm-warn';
+          mt.warnEl.style.setProperty('--wx', mt.side > 0 ? '100%' : '0%');
+          document.body.appendChild(mt.warnEl);
+          go('mAlert', { face: mt.side });
+        }
+        break;
+      case 'warn':
+        if (mt.block && !mt.shield && mt.t < 600) {
+          go('mGuard');
+          // bola energi dari tangan robot membentuk perisai di depan tampilan
+          const sx = feetX() + s.dir * 24, sy = innerHeight - BASE - 40;
+          const orb = document.createElement('div');
+          orb.className = 'intro-glow';
+          document.body.appendChild(orb);
+          orb.animate([{ transform: `translate(${sx}px, ${sy}px) scale(.6)` }, { transform: `translate(${mt.ix}px, ${mt.iy}px) scale(1.6)` }],
+            { duration: 260, easing: 'cubic-bezier(.4,0,.2,1)' }).onfinish = () => orb.remove();
+          mt.shield = true;
+          setTimeout(() => { if (mt.phase !== 'off') mt.shield = makeShield(mt.ix, mt.iy, 260, 260); }, 250);
+        }
+        if ((mt.t -= dt) <= 0) { mt.phase = 'fly'; mt.k = 0; mt.trailT = 0; meteorEl.classList.add('show'); }
+        break;
+      case 'fly': {
+        mt.k = Math.min(1, mt.k + dt / 1050);
+        const e = mt.k * mt.k;
+        const x = mt.sx + (mt.ix - mt.sx) * e, y = mt.sy + (mt.iy - mt.sy) * e;
+        const ang = Math.atan2(mt.iy - mt.sy, mt.ix - mt.sx) * 180 / Math.PI;
+        meteorEl.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${ang.toFixed(1)}deg) scale(${(0.6 + mt.k * 0.7).toFixed(2)})`;
+        mt.trailT -= dt;
+        while (mt.trailT <= 0) {
+          mt.trailT += 18;
+          fireP(x + rand(-6, 6), innerHeight - y + rand(-6, 6), rand(-14, 14), rand(-14, 14), rand(14, 26), rand(300, 520), rand(1.1, 1.7));
+        }
+        if (mt.block && mt.shield instanceof Element && Math.hypot(x - mt.ix, y - mt.iy) <= 130) {
+          const sh = mt.shield; mt.shield = null; mt.block = false;
+          shieldHit(sh);
+          fx1('m-ring', { left: x + 'px', top: y + 'px' });
+          const by = innerHeight - y;
+          if (mt.blockOk) {
+            // tertangkis: meteor meledak di perisai, tampilan aman
+            meteorEl.classList.remove('show');
+            if (mt.warnEl) { mt.warnEl.remove(); mt.warnEl = null; }
+            fx1('m-flash', { '--fx': x + 'px', '--fy': y + 'px' });
+            for (let i = 0; i < 26; i++) { const a = rand(0, Math.PI * 2), v = rand(50, 180); fireP(x, by, Math.cos(a) * v, Math.sin(a) * v, rand(14, 28), rand(450, 800), rand(1.1, 1.8)); }
+            for (let i = 0; i < 14; i++) { const a = rand(0, Math.PI * 2), v = rand(40, 120); fireP(x, by, Math.cos(a) * v, Math.sin(a) * v, rand(5, 9), rand(400, 700), 0.6, true); }
+            puff(x, by - 10, 8, { min: 18, max: 36, dx0: 20, dx1: 70, dy0: -30, dy1: 40 });
+            setTimeout(() => shieldEnd(sh, false), 380);
+            mt.phase = 'off'; mt.next = rand(80000, 130000);
+            dg.next = Math.max(dg.next, 20000);
+            go('wave', { t: 2400, quiet: true }); say(pick(LINES.blocked), 2400); boing(0.008);
+            break;
+          }
+          // gagal: perisai pecah, meteor tetap menembus
+          shieldEnd(sh, true);
+          say(pick(LINES.shieldFail), 1000);
+        }
+        if (mt.k >= 1) { mt.phase = 'broken'; if (mt.shield instanceof Element) { shieldEnd(mt.shield, true); mt.shield = null; } impact(mt.ix, mt.iy); }
+        break;
+      }
+    }
+  }
+
+  // ===== API: dipanggil saat nomor disalin =====
+  window.rbot = {
+    // komentar singkat (mis. saat ganti mode) tanpa mengganggu aksi robot
+    chat(msg, theme) {
+      if (INTRO_ST.includes(s.state) || METEOR_ST.includes(s.state) || ['burnt', 'ash', 'revive', 'alert', 'flee', 'rage'].includes(s.state)) return false;
+      say(msg, 2200);
+      if (reduceMotion) return true;
+      if (['walk', 'idle', 'look', 'run', 'dance', 'wave', 'skid'].includes(s.state)) {
+        s.dir = (themeBtnX() > feetX()) ? 1 : -1;
+        go(theme === 'light' ? 'wave' : 'idle', { t: 2200, quiet: true });
+        say(msg, 2200);
+        el.dataset.face = theme === 'light' ? 'happy' : 'cool';
+        fx.antV += 0.8; boing(0.004);
+      } else if (s.state === 'sleep') {
+        go('wake'); say(msg, 2200);
+      }
+      return true;
+    },
+    notify(msg) {
+      if (reduceMotion) {
+        el.dataset.face = 'happy'; say(msg, 2600);
+        clearTimeout(this._t);
+        this._t = setTimeout(() => { el.dataset.face = 'cool'; bubble.classList.remove('show'); el.classList.remove('talking'); }, 2600);
+        return true;
+      }
+      if (INTRO_ST.includes(s.state)) return false;
+      if (['burnt', 'ash', 'revive', 'alert', 'flee', 'rage'].includes(s.state) || dg.phase !== 'off' || mt.phase !== 'off' || METEOR_ST.includes(s.state)) return false;
+      if (TOUR.includes(s.state)) { say(msg, 2400); return true; }
+      if (['climb', 'hang', 'fall', 'jump', 'trip', 'flat', 'getup', 'dizzy', 'sleep', 'toWall'].includes(s.state)) {
+        // apapun yang sedang dilakukan, langsung siap siaga
+        s.rot = 0;
+      }
+      s.y = Math.max(0, s.y);
+      go('copyHop');
+      say(msg, 2600);
+      return true;
+    }
+  };
+
+  if (reduceMotion) {
+    s.x = maxX() * 0.15; s.state = 'idle'; pose('', 'cool'); animateRig(16); render();
+    document.addEventListener('pointerdown', e => {
+      const b = el.getBoundingClientRect();
+      if (e.clientX >= b.left - 8 && e.clientX <= b.right + 8 && e.clientY >= b.top - 8 && e.clientY <= b.bottom + 8) {
+        el.dataset.face = 'happy'; say(pick(LINES.chat));
+        setTimeout(() => { el.dataset.face = 'cool'; bubble.classList.remove('show'); el.classList.remove('talking'); }, 1900);
+      }
+    }, { passive: true });
+    return;
+  }
+
+  // ===== Intro setiap halaman dibuka / di-refresh =====
+  function runIntro() {
+    const root = document.documentElement;
+    if (!root.classList.contains('intro')) return go('walk');
+    const wrap = document.querySelector('.wrapper');
+    const parts = [...wrap.children];
+    s.x = Math.min(Math.max(innerWidth / 2 - CW / 2 - 70, 0), maxX()); s.y = 0; s.dir = 1; s.rot = 0;
+    go('introHi'); say('Halo! Aku penjaga web ini 🤖', 1500);
+    const timers = [];
+    const at = (ms, f) => timers.push(setTimeout(f, ms));
+    let done = false;
+    function reveal() {
+      if (done) return; done = true;
+      timers.forEach(clearTimeout);
+      document.removeEventListener('pointerdown', skip, true);
+      go('introFix'); say('Bentar... ✨🔧', 900);
+      const fxp = feetX();
+      parts.forEach((p, i) => {
+        const r = p.getBoundingClientRect();
+        const tx = r.left + r.width / 2, ty = r.top + r.height / 2;
+        // percikan energi terbang dari palu robot ke posisi elemen
+        const g = document.createElement('div');
+        g.className = 'intro-glow';
+        document.body.appendChild(g);
+        const sx = fxp + 24, sy = innerHeight - BASE - 40;
+        const midX = (sx + tx) / 2, midY = Math.min(sy, ty) - 60;
+        const delay = i * 80;
+        g.animate([
+          { transform: `translate(${sx}px, ${sy}px) scale(0.6)`, opacity: 0 },
+          { transform: `translate(${midX}px, ${midY}px) scale(1.2)`, opacity: 1, offset: 0.5 },
+          { transform: `translate(${tx}px, ${ty}px) scale(0.8)`, opacity: 1 }
+        ], { duration: 300, delay, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'both' }).onfinish = () => {
+          g.remove();
+          for (let k = 0; k < 6; k++) fireP(tx + rand(-r.width / 3, r.width / 3), innerHeight - ty + rand(-8, 8), rand(-30, 30), rand(-10, 30), rand(4, 8), rand(300, 520), 0.6, true);
+        };
+        p.animate([
+          { opacity: 0, transform: 'translateY(14px) scale(0.86)', filter: 'blur(6px) brightness(1.8)' },
+          { opacity: 1, transform: 'translateY(-2px) scale(1.02)', filter: 'blur(0) brightness(1.3)', offset: 0.65 },
+          { opacity: 1, transform: 'none', filter: 'none' }
+        ], { duration: 420, delay: delay + 230, easing: 'cubic-bezier(.2,.9,.3,1)', fill: 'backwards' });
+      });
+      root.classList.remove('intro');
+      const total = (parts.length - 1) * 80 + 230 + 420;
+      setTimeout(() => {
+        el.classList.remove('tooling');
+        go('wave', { t: 1600, quiet: true }); say('Taraa! Silakan bayar~ 😎', 1600); boing(0.006);
+      }, total);
+    }
+    // ketuk di mana saja untuk langsung tampil
+    function skip() { reveal(); }
+    document.addEventListener('pointerdown', skip, true);
+    at(1500, () => say('Kalau mau bayar, cek atas ya ☝️', 1300));
+    at(2800, () => { go('introOops'); say('Eh... kosong?! 😳', 1000); });
+    at(3700, reveal);
+  }
+  runIntro();
+  let last = performance.now();
+  function loop(now) {
+    const dt = Math.min(now - last, 50);
+    last = now;
+    if (!document.hidden && dt > 0) { tick(dt); dragonUpdate(dt); meteorUpdate(dt); physics(dt); animateRig(dt); render(); }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  let tapN = 0, tapLast = 0;
+  // Dicolek: reaksi konyol (tanpa menghalangi klik ke tombol di bawahnya)
+  document.addEventListener('pointerdown', e => {
+    const b = el.getBoundingClientRect();
+    if (e.clientX < b.left - 8 || e.clientX > b.right + 8 || e.clientY < b.top - 8 || e.clientY > b.bottom + 8) return;
+    // dicolek 5x berturut-turut: robot membesar & marah
+    const now = performance.now();
+    const busy = ['alert', 'flee', 'guard', 'burnt', 'ash', 'revive', 'rage', ...METEOR_ST, ...INTRO_ST, ...TOUR].includes(s.state) || dg.phase !== 'off' || mt.phase !== 'off';
+    if (busy) tapN = 0;
+    else {
+      tapN = (now - tapLast < 1200) ? tapN + 1 : 1;
+      tapLast = now;
+      if (tapN >= 5) { tapN = 0; go('rage'); return; }
+    }
+    switch (s.state) {
+      case 'climb': case 'hang': go('fall'); break;
+      case 'flat': case 'dizzy': case 'getup': say(pick(LINES.pokeDown), 1500); break;
+      case 'alert': case 'flee': say('Jangan colek, ada naga!! 🐉', 1400); break;
+      case 'guard': case 'mGuard': say('Lagi nahan nih!! 😣', 900); break;
+      case 'burnt': case 'ash': case 'revive': break;
+      case 'mAlert': say('Lihat ke atas!! ☄️', 1200); break;
+      case 'mBlown': case 'mDaze': case 'mShocked': break;
+      case 'mPrep': case 'mWalk': case 'mFix': say('Sabar, lagi kuperbaiki! 🛠️', 1200); break;
+      case 'mDone': say('Hehe, keren kan? 😎', 1200); break;
+      case 'introHi': case 'introOops': case 'introFix': break;
+      case 'copyHop': case 'fly': case 'perch': case 'cardWalk': case 'descend': say('Lagi kerja nih! 🫡', 1200); break;
+      case 'sleep': go('jump', { face: 'shock', vy: 0.7, vx: 0 }); say('Eh! Aku ga tidur kok! 😳', 1600); break;
+      case 'fall': case 'jump': case 'trip': break;
+      default: {
+        const r = Math.random();
+        if (r < 0.4) { go('jump', { face: 'shock', vy: 0.7, vx: 0 }); say(pick(LINES.poke), 1400); }
+        else if (r < 0.7) { s.dir = e.clientX < b.left + b.width / 2 ? 1 : -1; go('run', { t: 1100, quiet: true }); s.tripAt = -1; say('Kaboooor! 💨', 1300); }
+        else { go('dance'); say(pick(LINES.poke), 1500); }
+      }
+    }
+  }, { passive: true });
+})();
+</script>
+
+</body>
+</html>
